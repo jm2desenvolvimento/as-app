@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useAnimation, useInView } from 'framer-motion';
-import { MessageCircle, ChevronDown, ArrowRight, ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import WhatsAppMockup from '../WhatsAppMockup';
 
 const HeroSection: React.FC = () => {

@@ -1,52 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { usePermission } from '../../hooks/usePermission';
-import { PERMISSIONS } from '../../hooks/usePermission';
-import axios from 'axios';
 import { 
   User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
   Shield, 
   Edit, 
   Save, 
   X, 
-  Camera, 
   Key, 
   AlertCircle,
-  CheckCircle,
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock,
   Settings,
   Bell,
-  Globe,
   Heart,
-  Activity,
   FileText,
-  Download,
-  Upload,
-  Eye as EyeIcon,
-  Smartphone,
-  Monitor,
-  Globe2,
   Shield as ShieldIcon,
   History,
-  LogOut,
-  Check,
-  X as XIcon,
-  Clock,
-  AlertTriangle,
   Info,
-  Zap,
   Moon,
   Sun,
   Languages,
-  Volume2,
-  VolumeX,
-  TrendingUp
+  TrendingUp,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Eye as EyeIcon,
+  Smartphone
 } from 'lucide-react';
 import Modal from '../common/Modal';
 
@@ -115,7 +93,7 @@ interface ActivityLog {
 
 // Componente principal
 const Profile: React.FC = () => {
-  const { user, hasPermission } = usePermission();
+  const { user } = usePermission();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -144,13 +122,13 @@ const Profile: React.FC = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  // const [showTwoFactorModal, setShowTwoFactorModal] = useState(false); // Removido pois não está sendo usado
   const [passwordData, setPasswordData] = useState({
     current_password: '',
     new_password: '',
     confirm_password: ''
   });
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([
+  const [activityLogs] = useState<ActivityLog[]>([
     {
       id: '1',
       action: 'Login realizado',
@@ -242,7 +220,7 @@ const Profile: React.FC = () => {
 
   const handleInputChange = (field: string, value: string) => {
     if (field.includes('.')) {
-      const [parent, child] = field.split('.');
+      const [, child] = field.split('.');
       setFormData(prev => ({
         ...prev,
         emergency_contact: {
@@ -369,18 +347,18 @@ const Profile: React.FC = () => {
     }));
   };
 
-  const handleSaveSystemSettings = async () => {
-    try {
-      setLoading(true);
-      // Mock API call - substituir por chamada real
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Configurações salvas com sucesso!');
-    } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleSaveSystemSettings = async () => {
+  //   try {
+  //     setLoading(true);
+  //     // Mock API call - substituir por chamada real
+  //     await new Promise(resolve => setTimeout(resolve, 1000));
+  //     alert('Configurações salvas com sucesso!');
+  //   } catch (error) {
+  //     console.error('Erro ao salvar configurações:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleTwoFactorToggle = async () => {
     try {

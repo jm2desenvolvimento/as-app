@@ -1,40 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import {
-  Calendar,
-  CheckCircle,
-  X,
-  Clock,
-  FileText,
-  Download,
-  Search,
-  Filter,
-  ChevronDown,
+import { 
+  Calendar, 
+  FileText, 
+  Filter, 
+  Eye, 
   ChevronUp,
-  Eye,
+  ChevronDown,
   Video,
-  MapPin,
-  User,
-  Stethoscope,
+  CheckCircle,
   TrendingUp,
-  BarChart3,
-  FileDown,
-  Share2,
-  Printer,
-  CalendarDays,
   AlertCircle,
-  Plus,
-  ArrowLeft,
-  MoreHorizontal,
+  History as HistoryIcon,
   Star,
-  MessageCircle,
-  Phone,
-  Mail,
-  ExternalLink,
-  History as HistoryIcon
+  Search
 } from 'lucide-react';
-// Removidos imports de gráficos - não serão utilizados
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
 import Modal from '../common/Modal';
 import { PageHeader } from '../ui';
@@ -85,7 +64,7 @@ interface Statistics {
 }
 
 const History: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Removido pois não está sendo usado
   const { hasPermission } = usePermission();
   
   // Estados
@@ -354,7 +333,7 @@ const History: React.FC = () => {
 
   // Obter especialidades únicas
   const specialties = [...new Set(appointments.map(a => a.specialty))];
-  const units = [...new Set(appointments.map(a => a.health_unit))];
+  // const units = [...new Set(appointments.map(a => a.health_unit))]; // Removido pois não está sendo usado
 
   // Calcular paginação
   const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage);

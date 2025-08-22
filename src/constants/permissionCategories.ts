@@ -1,23 +1,16 @@
 import { 
-  Home, 
   Building2, 
   Stethoscope, 
   Users, 
   Calendar, 
   ClipboardList, 
-  FileText, 
   Heart, 
   Bell, 
-  Download, 
   Shield, 
   Settings, 
   User,
   Building,
   MapPin,
-  Activity,
-  Pill,
-  TestTube,
-  Clipboard,
   Clock,
   BarChart3,
   Eye,
@@ -25,6 +18,7 @@ import {
   Lock,
   Badge
 } from 'lucide-react';
+import Home from '../pages/landingpage/Home'; // Corrigindo a importação para a página Home.tsx
 
 export interface PermissionCategory {
   key: string;

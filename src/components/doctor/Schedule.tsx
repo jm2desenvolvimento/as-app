@@ -1,36 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  Filter,
-  Search,
-  Plus,
-  Eye,
-  Edit,
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Phone, 
+  Plus, 
+  Filter, 
+  AlertCircle, 
+  Video, 
+  Clock3, 
+  Stethoscope, 
+  CalendarIcon, 
+  Building2, 
+  CalendarDays, 
+  MoreVertical, 
+  CheckCircle, 
+  Edit, 
   X,
-  CheckCircle,
-  AlertCircle,
-  Video,
-  Stethoscope,
-  ChevronLeft,
-  ChevronRight,
-  CalendarDays,
-  List,
-  Grid3X3,
-  MoreVertical,
-  Phone,
   MessageCircle,
-  FileText,
-  Star,
-  UserCheck,
-  UserX,
-  Clock3,
-  Building2,
-  Calendar as CalendarIcon
+  List
 } from 'lucide-react';
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
 

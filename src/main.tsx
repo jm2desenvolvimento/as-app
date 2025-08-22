@@ -6,8 +6,18 @@ import axios from 'axios'
 
 // Configuração global do axios: baseURL e token JWT
 const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+console.log('🔧 [AXIOS CONFIG] VITE_API_URL:', import.meta.env.VITE_API_URL)
+console.log('🔧 [AXIOS CONFIG] apiBaseUrl final:', apiBaseUrl)
 axios.defaults.baseURL = apiBaseUrl
+
 axios.interceptors.request.use((config) => {
+  console.log('🚀 [AXIOS REQUEST]', {
+    url: config.url,
+    baseURL: config.baseURL,
+    fullURL: `${config.baseURL || ''}${config.url || ''}`,
+    method: config.method?.toUpperCase()
+  })
+  
   const isLogin = typeof config.url === 'string' && config.url.includes('/auth/login')
   if (!isLogin) {
     const token = localStorage.getItem('token')

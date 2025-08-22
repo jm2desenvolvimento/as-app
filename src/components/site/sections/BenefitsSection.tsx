@@ -4,7 +4,6 @@ import {
   Clock, 
   ShieldCheck, 
   Users, 
-  Smartphone,
   ArrowRight
 } from 'lucide-react';
 

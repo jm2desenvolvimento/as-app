@@ -1,7 +1,7 @@
 import React from 'react';
 import { RoleTab, PermissionCategory } from './';
 import { PERMISSION_GROUPS, type PermissionGroup } from '../../../constants/permissionCategories';
-import { CheckSquare, Square, Zap, RotateCcw } from 'lucide-react';
+import { CheckSquare, Zap, RotateCcw } from 'lucide-react';
 
 interface Role {
   key: string;

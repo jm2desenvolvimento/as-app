@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Building2, ArrowLeft, Edit2, Users, ClipboardList, Calendar, User, MapPin, Phone, Landmark, Mail, CheckCircle, Clock } from 'lucide-react';
 import axios from 'axios';
@@ -15,7 +15,7 @@ const HealthUnitDetails = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    axios.get(`/api/healthunit/${id}`)
+            axios.get(`/healthunit/${id}`)
       .then(res => setUnit(res.data))
       .catch(() => setError('Erro ao buscar unidade de saúde'))
       .finally(() => setLoading(false));

@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react'; // Removido pois não está sendo usado
 
 export default function UsersPermissions() {
   return (

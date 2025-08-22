@@ -7,17 +7,27 @@ import { useAuthStore } from '../../../store/authStore';
 interface EditConsultationsTabProps {
   formData: Partial<MedicalRecord>;
   setFormData: React.Dispatch<React.SetStateAction<Partial<MedicalRecord>>>;
+  onValidationChange?: (isValid: boolean) => void;
 }
 
 const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, setFormData }) => {
   const { token, user } = useAuthStore();
-  const [consultations, setConsultations] = useState<Consultation[]>([]);
+
+  // ✅ DEBUG: Log dos dados recebidos
+  console.log('🔄 [EditConsultationsTab] FormData recebido:', formData);
+  console.log('🏥 [EditConsultationsTab] Consultations:', formData.consultations);
+  console.log('📊 [EditConsultationsTab] Consultations length:', formData.consultations?.length || 0);
+  console.log('🔍 [EditConsultationsTab] FormData keys:', Object.keys(formData));
+
+  // ✅ CORRIGIDO: Usar formData.consultations diretamente em vez de estado local
+  const consultations = formData.consultations || [];
+  
   const [editingConsultation, setEditingConsultation] = useState<Consultation | null>(null);
   const [newConsultation, setNewConsultation] = useState<Partial<Consultation>>({
     id: '',
     date: new Date().toISOString().split('T')[0],
-    doctor_name: '',
-    specialty: '',
+    doctor_name: user?.profile?.name || 'Médico',
+    specialty: user?.profile?.profile_doctor?.specialty || 'Clínico Geral',
     reason: '',
     diagnosis: '',
     prescription: '',
@@ -43,43 +53,37 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
     };
   };
 
-  // Fetch consultations when component mounts or formData.id changes
+  // ✅ PREENCHIMENTO AUTOMÁTICO: Preencher campos do médico quando o componente montar
   useEffect(() => {
-    if (formData?.id) {
-      fetchConsultations(formData.id);
-    }
-  }, [formData?.id]);
-
-  const fetchConsultations = async (medicalRecordId: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      console.log('[EditConsultationsTab] Buscando consultas para prontuário:', medicalRecordId);
-      console.log('[EditConsultationsTab] URL:', `http://localhost:3000/api/medical-records/${medicalRecordId}/consultations`);
-      console.log('[EditConsultationsTab] Headers:', getAuthHeaders());
+    if (user?.profile?.name || user?.profile?.profile_doctor?.name) {
+      const doctorName = user.profile?.name || user.profile?.profile_doctor?.name || 'Médico';
+      const doctorSpecialty = user.profile?.profile_doctor?.specialty || 'Clínico Geral';
       
-      const response = await axios.get(`http://localhost:3000/api/medical-records/${medicalRecordId}/consultations`, {
-        headers: getAuthHeaders()
+      console.log('[EditConsultationsTab] Preenchendo campos automaticamente:', {
+        doctorName,
+        doctorSpecialty,
+        user: user
       });
       
-      console.log('[EditConsultationsTab] Consultas carregadas com sucesso:', response.data);
-      setConsultations(response.data);
-      // Update formData to keep it in sync
-      setFormData(prev => ({
+      setNewConsultation(prev => ({
         ...prev,
-        consultations: response.data
+        doctor_name: doctorName,
+        specialty: doctorSpecialty
       }));
-    } catch (err: any) {
-      console.error('[EditConsultationsTab] Error fetching consultations:', err);
-      setError('Erro ao carregar consultas');
-      // Fallback to existing data if available
-      if (formData.consultations) {
-        setConsultations(formData.consultations);
-      }
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  // ✅ CORRIGIDO: Remover fetchConsultations pois agora usamos formData diretamente
+  // useEffect(() => {
+  //   if (formData?.id) {
+  //     fetchConsultations(formData.id);
+  //   }
+  // }, [formData?.id]);
+
+  // ✅ CORRIGIDO: Função simplificada que não busca da API
+  // const fetchConsultations = async (medicalRecordId: string) => {
+  //   // Removido pois agora usamos formData.consultations diretamente
+  // };
 
   const handleAddConsultation = async () => {
     if (!formData?.id) return;
@@ -114,10 +118,7 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
       console.log('[EditConsultationsTab] Resposta da API:', response.data);
       const newConsultationFromAPI = response.data;
       
-      // Update local state
-      setConsultations(prev => [...prev, newConsultationFromAPI]);
-      
-      // Update formData to keep it in sync
+      // ✅ CORRIGIDO: Atualizar formData diretamente
       setFormData(prev => ({
         ...prev,
         consultations: [...(prev.consultations || []), newConsultationFromAPI]
@@ -164,46 +165,40 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
       const response = await axios.put(`/api/medical-records/consultations/${editingConsultation.id}`, editingConsultation);
       const updatedConsultation = response.data;
       
-      // Update local state
-      setConsultations(prev => prev.map(c => 
-        c.id === editingConsultation.id ? updatedConsultation : c
-      ));
-      
-      // Update formData to keep it in sync
+      // ✅ CORRIGIDO: Atualizar formData diretamente
       setFormData(prev => ({
         ...prev,
-        consultations: prev.consultations?.map(c => 
+        consultations: (prev.consultations || []).map(c => 
           c.id === editingConsultation.id ? updatedConsultation : c
         )
       }));
       
       setEditingConsultation(null);
     } catch (err: any) {
-      console.error('Error updating consultation:', err);
+      console.error('[EditConsultationsTab] Erro ao atualizar consulta:', err);
       setError('Erro ao atualizar consulta');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDeleteConsultation = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta consulta?')) return;
+  const handleDeleteConsultation = async (consultationId: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta consulta?')) return;
     
     setIsLoading(true);
     setError(null);
     try {
-      await axios.delete(`/api/medical-records/consultations/${id}`);
+      await axios.delete(`/api/medical-records/consultations/${consultationId}`, {
+        headers: getAuthHeaders()
+      });
       
-      // Update local state
-      setConsultations(prev => prev.filter(c => c.id !== id));
-      
-      // Update formData to keep it in sync
+      // ✅ CORRIGIDO: Atualizar formData diretamente
       setFormData(prev => ({
         ...prev,
-        consultations: prev.consultations?.filter(c => c.id !== id)
+        consultations: (prev.consultations || []).filter(c => c.id !== consultationId)
       }));
     } catch (err: any) {
-      console.error('Error deleting consultation:', err);
+      console.error('[EditConsultationsTab] Erro ao excluir consulta:', err);
       setError('Erro ao excluir consulta');
     } finally {
       setIsLoading(false);
@@ -281,7 +276,7 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Médico
+              Médico <span className="text-xs text-gray-500">(preenchido automaticamente)</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -293,14 +288,15 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
                 value={consultation.doctor_name || ''}
                 onChange={handleChange}
                 placeholder="Nome do médico"
-                className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                readOnly
               />
             </div>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Especialidade
+              Especialidade <span className="text-xs text-gray-500">(preenchida automaticamente)</span>
             </label>
             <input
               type="text"
@@ -308,7 +304,8 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
               value={consultation.specialty || ''}
               onChange={handleChange}
               placeholder="Especialidade médica"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+              readOnly
             />
           </div>
         </div>
@@ -357,21 +354,6 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Duração (minutos)
-          </label>
-          <input
-            type="number"
-            name="duration_minutes"
-            value={consultation.duration_minutes || 30}
-            onChange={handleChange}
-            min="1"
-            placeholder="Duração da consulta em minutos"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
             Observações
           </label>
           <textarea
@@ -410,11 +392,16 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">Consultas</h3>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Consultas</h3>
+          <p className="text-sm text-gray-500 mt-1">Consultas salvam automaticamente quando você clica em "Nova Consulta"</p>
+        </div>
         {!isAdding && !editingConsultation && (
           <button
             onClick={() => setIsAdding(true)}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            disabled={isLoading}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Adiciona e salva a consulta imediatamente no banco de dados"
           >
             <Plus className="w-4 h-4 mr-1" />
             Nova Consulta

@@ -16,6 +16,7 @@ interface Patient {
     name: string;
     birth_date: string;
     gender: string;
+    cpf?: string;
     sus_card?: string;
     profile_phones?: Array<{
       id: string;
@@ -73,13 +74,12 @@ const Patients = () => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    birth_date: '',
-  });
-  const [errors, setErrors] = useState<any>({});
+  // const [form, setForm] = useState({
+  //   name: '',
+  //   email: '',
+  //   phone: '',
+  //   birth_date: '',
+  // }); // Removido pois não está sendo usado
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewPatient, setViewPatient] = useState<Patient | null>(null);
 
@@ -93,6 +93,17 @@ const Patients = () => {
   const [modalStep, setModalStep] = useState<number>(1);
   // Helper para evitar TS2367 dentro de ramos onde modalStep é estreitado
   const isStep = (s: number) => modalStep === s;
+  
+  // Type assertion para resolver problemas de tipo - forçar number
+  const currentModalStep = modalStep as number;
+  
+  // Helper functions para cada etapa para evitar problemas de tipo
+  const isStep1 = () => currentModalStep === 1;
+  const isStep2 = () => currentModalStep === 2;
+  const isStep3 = () => currentModalStep === 3;
+  const isStep4 = () => currentModalStep === 4;
+  
+
   const [userForm, setUserForm] = useState({
     email: '',
     password: '',
@@ -201,19 +212,18 @@ const Patients = () => {
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
-    setForm({ name: '', email: '', phone: '', birth_date: '' });
+    // setForm({ name: '', email: '', phone: '', birth_date: '' }); // Removido pois form não existe mais
     setEditId(null);
-    setErrors({});
   };
 
   const handleEdit = (patient: Patient) => {
     setEditId(patient.id);
-    setForm({
-      name: patient.profile?.name || '',
-      email: patient.email || '',
-      phone: patient.profile?.profile_phones?.[0]?.phone || '',
-      birth_date: patient.profile?.birth_date ? new Date(patient.profile.birth_date).toISOString().split('T')[0] : '',
-    });
+    // setForm({
+    //   name: patient.profile?.name || '',
+    //   email: patient.email || '',
+    //   phone: patient.profile?.profile_phones?.[0]?.phone || '',
+    //   birth_date: patient.profile?.birth_date ? new Date(patient.profile.birth_date).toISOString().split('T')[0] : '',
+    // }); // Removido pois form não existe mais
     setIsModalOpen(true);
   };
 
@@ -242,30 +252,29 @@ const Patients = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Validação simples
-    const newErrors: any = {};
-    if (!form.name) newErrors.name = 'Nome obrigatório';
-    if (!form.email) newErrors.email = 'E-mail obrigatório';
-    if (!form.phone) newErrors.phone = 'Telefone obrigatório';
-    if (!form.birth_date) newErrors.birth_date = 'Data de nascimento obrigatória';
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-    if (editId) {
-      axios.put(`/patients/${editId}`, form)
-        .then(() => {
-          setIsModalOpen(false);
-          fetchPatients();
-        });
-    } else {
-      axios.post('/patients', form)
-        .then(() => {
-          setIsModalOpen(false);
-          fetchPatients();
-        });
-    }
-  };
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   // Validação simples
+  //   const newErrors: any = {};
+  //   if (!form.name) newErrors.name = 'Nome obrigatório';
+  //   if (!form.email) newErrors.email = 'E-mail obrigatório';
+  //   if (!form.phone) newErrors.phone = 'Telefone obrigatório';
+  //   if (!form.birth_date) newErrors.birth_date = 'Data de nascimento obrigatória';
+  //   if (Object.keys(newErrors).length > 0) return;
+  //   if (editId) {
+  //     axios.put(`/patients/${editId}`, form)
+  //       .then(() => {
+  //         setIsModalOpen(false);
+  //         fetchPatients();
+  //       });
+  //     } else {
+  //       axios.post('/patients', form)
+  //         .then(() => {
+  //         setIsModalOpen(false);
+  //         fetchPatients();
+  //       });
+  //     }
+  //   };
 
   // Função para validar etapa 1
   const validateUserStep = () => {
@@ -319,9 +328,9 @@ const Patients = () => {
   const handleEmailChange = (idx: number, value: string) => {
     setEmails(emails.map((e, i) => i === idx ? { ...e, email: value } : e));
   };
-  const handleSetPrimaryEmail = (idx: number) => {
-    setEmails(emails.map((e, i) => ({ ...e, is_primary: i === idx })));
-  };
+  // const handleSetPrimaryEmail = (idx: number) => {
+  //   setEmails(emails.map((e, i) => ({ ...e, is_primary: i === idx })));
+  // };
 
   const validateContactStep = () => {
     const errors: any = {};
@@ -506,7 +515,7 @@ const Patients = () => {
       {/* Modal de cadastro/edição */}
                                 <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setModalStep(1); }} title={editId ? 'Editar Paciente' : 'Novo Paciente'} size="full" className="max-w-4xl max-h-[90vh]">
                <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-                 {modalStep === 1 && (
+                 {isStep1() && (
                    <>
                      <div className="flex items-center justify-center mb-6">
               <div className="flex gap-2 items-center">
@@ -647,7 +656,7 @@ const Patients = () => {
             </form>
           </>
         )}
-        {modalStep === 2 && (
+                         {isStep2() && (
           <>
             <div className="flex items-center justify-center mb-6">
               <div className="flex gap-2 items-center">
@@ -697,7 +706,7 @@ const Patients = () => {
             </form>
           </>
         )}
-        {modalStep === 3 && (
+                         {isStep3() && (
           <>
             <div className="flex items-center justify-center mb-6">
               <div className="flex gap-2 items-center">
@@ -777,7 +786,7 @@ const Patients = () => {
             </form>
           </>
         )}
-        {modalStep === 4 && (
+                         {isStep4() && (
           <>
             <div className="flex items-center justify-center mb-6">
               <div className="flex gap-2 items-center">
@@ -1104,10 +1113,10 @@ const Patients = () => {
               Fechar
             </button>
           </div>
-        </div>
-      </Modal>
+      </div>
+</Modal>
     )}
-  </div>
+</div>
 );
 
 };

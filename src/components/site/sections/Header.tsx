@@ -48,7 +48,7 @@ const Header: React.FC = () => {
     password: ''
   });
   const navigate = useNavigate();
-  const { login, loading, error } = useAuthStore();
+  const { login } = useAuthStore();
 
   useEffect(() => {
     const handleScroll = () => {

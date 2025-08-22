@@ -1,34 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import {
-  Calendar,
-  CheckCircle,
-  Clock,
-  FileText,
-  User,
-  Bell,
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  Stethoscope,
-  Heart,
-  Eye,
-  Download,
-  Phone,
-  MapPin,
-  CalendarDays,
-  BarChart3,
-  Activity,
-  Pill,
-  Thermometer,
-  Shield,
-  Info,
-  Video,
-  MessageCircle,
-  BookOpen,
-  FileHeart
+import { 
+  Calendar, 
+  Clock, 
+  Phone, 
+  Plus, 
+  AlertCircle, 
+  CheckCircle, 
+  Video, 
+  Download, 
+  MessageCircle, 
+  Bell, 
+  TrendingUp, 
+  TrendingDown, 
+  Heart, 
+  Thermometer, 
+  Pill, 
+  Shield, 
+  Info, 
+  BookOpen, 
+  FileHeart,
+  FileText
 } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
 
@@ -83,7 +75,7 @@ interface QuickAction {
   label: string;
   icon: React.ReactNode;
   action: () => void;
-  permission: 'appointment.create' | 'medical_record.view' | 'notification.view';
+  permission: 'appointment_create' | 'medical_record_view' | 'notification_view';
   color: string;
 }
 
@@ -97,7 +89,7 @@ const Dashboard: React.FC = () => {
   const [patientData, setPatientData] = useState<PatientData | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [documents, setDocuments] = useState<MedicalDocument[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  // const [stats] = useState<any>(null); // Removido pois não está sendo usado
 
   // Verificar permissão
   if (!hasPermission('dashboard_patient_view')) {
@@ -221,13 +213,13 @@ const Dashboard: React.FC = () => {
           }
         ]);
 
-        setStats({
-          totalAppointments: 15,
-          completedAppointments: 12,
-          scheduledAppointments: 3,
-          pendingDocuments: 2,
-          nextAppointment: '2025-01-25T14:00:00'
-        });
+        // setStats({
+        //   totalAppointments: 15,
+        //   completedAppointments: 12,
+        //   scheduledAppointments: 3,
+        //   pendingDocuments: 2,
+        //   nextAppointment: '2025-01-25T14:00:00'
+        // }); // Removido pois stats não existe mais
         
       } catch (err) {
         console.error('Erro ao carregar dados:', err);
@@ -282,42 +274,42 @@ const Dashboard: React.FC = () => {
       label: 'Agendar Consulta',
       icon: <Plus className="w-5 h-5" />,
       action: () => navigate('/patient/appointments/new'),
-      permission: 'appointment.create',
+      permission: 'appointment_create',
       color: 'bg-blue-500 hover:bg-blue-600'
     },
     {
       label: 'Telemedicina',
       icon: <Video className="w-5 h-5" />,
       action: () => navigate('/patient/telemedicine'),
-      permission: 'appointment.create',
+      permission: 'appointment_create',
       color: 'bg-green-500 hover:bg-green-600'
     },
     {
       label: 'Meu Prontuário',
       icon: <FileText className="w-5 h-5" />,
       action: () => navigate('/patient/medical-record'),
-      permission: 'medical_record.view',
+      permission: 'medical_record_view',
       color: 'bg-purple-500 hover:bg-purple-600'
     },
     {
       label: 'Documentos',
       icon: <Download className="w-5 h-5" />,
       action: () => navigate('/patient/documents'),
-      permission: 'medical_record.view',
+      permission: 'medical_record_view',
       color: 'bg-indigo-500 hover:bg-indigo-600'
     },
     {
       label: 'Chat Médico',
       icon: <MessageCircle className="w-5 h-5" />,
       action: () => navigate('/patient/chat'),
-      permission: 'notification.view',
+      permission: 'notification_view',
       color: 'bg-pink-500 hover:bg-pink-600'
     },
     {
       label: 'Notificações',
       icon: <Bell className="w-5 h-5" />,
       action: () => navigate('/patient/notifications'),
-      permission: 'notification.view',
+      permission: 'notification_view',
       color: 'bg-yellow-500 hover:bg-yellow-600'
     }
   ];

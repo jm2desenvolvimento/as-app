@@ -43,11 +43,10 @@ export interface Exam {
 export interface Document {
   id: string;
   name: string;
-  type?: string;
+  type?: string; // ✅ CORRIGIDO: Aceita qualquer string
   date: string;
   description?: string;
-  url?: string;
-  file_url?: string;
+  file_url: string; // ✅ CAMPO PRINCIPAL para URL do arquivo
   size?: string;
   added_by?: string;
 }

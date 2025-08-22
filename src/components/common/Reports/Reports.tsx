@@ -450,7 +450,6 @@ const Reports: React.FC = () => {
     }));
   };
 
-  const handleApplyFilters = () => setRefreshTick((n) => n + 1);
   const handleClearFilters = () => setFilters(() => buildDefaultFilters(role, {
     city_id: user?.city_id ?? null,
     health_unit_id: user?.health_unit_id ?? null,

@@ -2,114 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { usePermission } from '../../hooks/usePermission';
-import { PERMISSIONS } from '../../hooks/usePermission';
+// import { PERMISSIONS } from '../../hooks/usePermission'; // Removido pois não está sendo usado
 import { useAuthStore } from '../../store/authStore';
 import { 
-  FileText, 
   User, 
   Calendar, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  FileText, 
+  Pill, 
+  TestTube, 
+  Download, 
   Plus, 
-  Edit, 
+  Edit2, 
   Trash2, 
   Eye, 
-  Search, 
-  ArrowLeft,
-  Download,
-  Printer,
-  AlertCircle,
-  CheckCircle,
-  MapPin,
-  Phone,
-  Mail,
-  Heart,
-  Activity,
-  Pill,
-  TestTube,
+  Clock, 
+  Heart, 
+  // Thermometer, 
+  Activity, 
+  // Star, 
+  // Image, 
+  // File,
   ChevronRight,
-  AlertTriangle,
-  Activity as ActivityIcon,
-  Info,
-  Shield,
-  X,
+  Printer,
+  Stethoscope,
   RulerIcon,
   WeightIcon,
-  Stethoscope,
-  Clock,
-  File,
-  Image
+  AlertTriangle,
+  ArrowLeft,
+  Search,
+  CheckCircle,
+  Shield,
+  Info,
+  Activity as ActivityIcon,
+  AlertCircle
 } from 'lucide-react';
 
-// Interfaces
-interface MedicalRecord {
-  id: string;
-  patient_id: string;
-  patient_name: string;
-  patient_cpf: string;
-  patient_birth_date: string;
-  patient_phone: string;
-  patient_email: string;
-  patient_address: string;
-  blood_type: string;
-  height?: number; // altura em cm
-  weight?: number; // peso em kg
-  allergies: string[];
-  chronic_diseases: string[];
-  medications: Medication[];
-  consultations: Consultation[];
-  exams: Exam[];
-  documents: Document[];
-  vital_signs?: VitalSigns;
-  created_at: string;
-  updated_at: string;
-}
-
-interface VitalSigns {
-  blood_pressure?: string; // "120/80"
-  heart_rate?: number; // bpm
-  temperature?: number; // celsius
-  oxygen_saturation?: number; // %
-  last_updated?: string;
-}
-
-interface Medication {
-  id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  start_date: string;
-  end_date?: string;
-  prescribed_by: string;
-  status: 'active' | 'discontinued' | 'completed';
-}
-
-interface Consultation {
-  id: string;
-  date: string;
-  doctor_name: string;
-  specialty: string;
-  diagnosis: string;
-  prescription: string;
-  notes: string;
-  status: 'completed' | 'scheduled' | 'cancelled';
-}
-
-interface Exam {
-  id: string;
-  name: string;
-  date: string;
-  result: string;
-  status: 'pending' | 'completed' | 'cancelled';
-  laboratory: string;
-}
-
-interface Document {
-  id: string;
-  name: string;
-  type: 'prescription' | 'exam_result' | 'medical_report' | 'other';
-  date: string;
-  file_url: string;
-  size: string;
-}
+// Importar tipos centralizados
+import type { 
+  MedicalRecord as MedicalRecordType, 
+  Consultation, 
+  Medication, 
+  Exam, 
+  Document 
+} from '../../types/medical-record';
 
 interface Patient {
   id: string; // ✅ profile.id (usado como patient_id)
@@ -126,37 +64,37 @@ interface Patient {
 
 // Componente principal
 const MedicalRecord: React.FC = () => {
-  const { user, hasPermission, hasRole, isPatient, isDoctor, isAdmin, isMaster } = usePermission();
+  const { user, hasRole, isPatient, isDoctor, isAdmin, isMaster } = usePermission();
   const { user: authUser, token } = useAuthStore();
   const { patientId } = useParams<{ patientId?: string }>();
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
-  const [medicalRecord, setMedicalRecord] = useState<MedicalRecord | null>(null);
+  const [medicalRecord, setMedicalRecord] = useState<MedicalRecordType | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   
   // Estados para edição
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<MedicalRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<MedicalRecordType | null>(null);
   const [editLoading, setEditLoading] = useState(false);
 
   // Debug: Log dos estados de edição
   console.log('Estados de edição:', { isEditModalOpen, editingRecord: editingRecord?.patient_name, editLoading });
 
-  // Determinar contexto baseado no role
-  const context = {
-    role: user?.role,
-    permissions: {
-      canView: hasPermission(PERMISSIONS.MEDICAL_RECORD_VIEW),
-      canEdit: hasPermission(PERMISSIONS.MEDICAL_RECORD_UPDATE),
-      canCreate: hasPermission(PERMISSIONS.MEDICAL_RECORD_CREATE),
-      canDelete: hasPermission(PERMISSIONS.MEDICAL_RECORD_DELETE),
-      canList: hasPermission(PERMISSIONS.MEDICAL_RECORD_LIST)
-    }
-  };
+  // Determinar contexto baseado no role (removido pois não é mais necessário)
+  // const context = {
+  //   role: user?.role,
+  //   permissions: {
+  //     canView: hasPermission(PERMISSIONS.MEDICAL_RECORD_VIEW),
+  //     canEdit: hasPermission(PERMISSIONS.MEDICAL_RECORD_UPDATE),
+  //     canCreate: hasPermission(PERMISSIONS.MEDICAL_RECORD_CREATE),
+  //     canDelete: hasPermission(PERMISSIONS.MEDICAL_RECORD_DELETE),
+  //     canList: hasPermission(PERMISSIONS.MEDICAL_RECORD_LIST)
+  //   }
+  // };
 
   // Debug: Log das permissões
-  console.log('Permissões do usuário:', context.permissions);
+          // console.log('Permissões do usuário:', context.permissions);
 
   // Determinar qual paciente visualizar
   const targetPatientId = hasRole('PATIENT') ? user?.id : patientId;
@@ -235,78 +173,120 @@ const MedicalRecord: React.FC = () => {
 
         const apiRecord = await response.json();
         console.log('✅ Prontuário carregado com sucesso da API:', apiRecord);
+        console.log('🔍 DEBUG - Campos disponíveis:', Object.keys(apiRecord));
+        console.log('🔍 DEBUG - Patient data:', apiRecord.patient);
+        console.log('🔍 DEBUG - Patient user data:', apiRecord.patient?.user);
+        console.log('🔍 DEBUG - Patient profile emails:', apiRecord.patient?.profile_emails);
+        console.log('🔍 DEBUG - Patient user_id:', apiRecord.patient?.user_id);
+        console.log('🔍 DEBUG - Email mapping debug:', {
+          userEmail: apiRecord.patient?.user?.email,
+          profileEmails: apiRecord.patient?.profile_emails,
+          firstProfileEmail: apiRecord.patient?.profile_emails?.[0]?.email,
+          user_id: apiRecord.patient?.user_id,
+          finalEmail: apiRecord.patient?.user?.email || 
+                     apiRecord.patient?.profile_emails?.[0]?.email || 
+                     (apiRecord.patient?.user_id ? 'Email não encontrado' : ''),
+          patientObject: apiRecord.patient,
+          patientUserObject: apiRecord.patient?.user
+        });
+        console.log('🔍 DEBUG - Consultas:', apiRecord.consultations);
+        console.log('🔍 DEBUG - Medicamentos:', apiRecord.medications);
+        console.log('🔍 DEBUG - Exames:', apiRecord.exams);
+        console.log('🔍 DEBUG - Exames detalhado:', apiRecord.exams?.map((exam: any) => ({
+          id: exam.id,
+          name: exam.name,
+          lab: exam.lab,
+          results: exam.results,
+          doctor_name: exam.doctor_name,
+          status: exam.status
+        })));
+        console.log('🔍 DEBUG - Documentos:', apiRecord.documents);
         
         // Transformar dados da API para o formato esperado pelo frontend
-        const transformedRecord: MedicalRecord = {
+        const transformedRecord: MedicalRecordType = {
           id: apiRecord.id,
           patient_id: patientId,
           patient_name: apiRecord.patient?.name || 'Nome não informado',
-          patient_cpf: apiRecord.patient?.cpf || 'CPF não informado',
+          patient_cpf: apiRecord.patient?.user?.cpf || 'CPF não informado',
           patient_birth_date: apiRecord.patient?.birth_date ? 
             new Date(apiRecord.patient.birth_date).toISOString().split('T')[0] : '',
-          patient_phone: apiRecord.patient_phone || 'Telefone não informado',
-          patient_email: apiRecord.patient_email || 'Email não informado',
-          patient_address: apiRecord.patient_address || 'Endereço não informado',
+          patient_phone: apiRecord.patient?.profile_phones?.[0]?.phone || 'Telefone não informado',
+          patient_email: apiRecord.patient?.user?.email || 
+                         apiRecord.patient?.profile_emails?.[0]?.email || 
+                         (apiRecord.patient?.user_id ? 'Email não encontrado' : ''),
+          patient_address: apiRecord.patient?.profile_addresses?.[0] ? 
+            `${apiRecord.patient.profile_addresses[0].address}, ${apiRecord.patient.profile_addresses[0].number || ''} - ${apiRecord.patient.profile_addresses[0].district || ''} - ${apiRecord.patient.profile_addresses[0].city}/${apiRecord.patient.profile_addresses[0].state}` : 'Endereço não informado',
           blood_type: apiRecord.blood_type || 'Não informado',
           height: apiRecord.height || 0,
           weight: apiRecord.weight || 0,
           allergies: apiRecord.allergies || [],
           chronic_diseases: apiRecord.chronic_diseases || [],
-          vital_signs: {
-            blood_pressure: '120/80',
-            heart_rate: 72,
-            temperature: 36.8,
-            oxygen_saturation: 98,
-            last_updated: new Date().toISOString().split('T')[0]
-          },
-          medications: apiRecord.prescriptions?.flatMap((prescription: any) => 
-            prescription.prescription_items?.map((item: any) => ({
-              id: item.id,
-              name: `${item.medication_name} ${item.dosage}`,
-              dosage: item.dosage,
-              frequency: item.frequency,
-              start_date: prescription.date ? new Date(prescription.date).toISOString().split('T')[0] : '',
-              prescribed_by: prescription.doctor?.profile?.name || 'Médico não informado',
-              status: prescription.status === 'active' ? 'active' : 'inactive'
-            })) || []
-          ) || [],
-          consultations: apiRecord.clinical_encounters?.map((encounter: any) => ({
-            id: encounter.id,
-            date: encounter.date ? new Date(encounter.date).toISOString().split('T')[0] : '',
-            doctor_name: encounter.doctor?.profile?.name || 'Médico não informado',
-            specialty: encounter.specialty || 'Especialidade não informada',
-            diagnosis: encounter.diagnoses?.[0]?.description || 'Diagnóstico não informado',
-            prescription: encounter.treatments?.[0]?.description || 'Prescrição não informada',
-            notes: encounter.notes || 'Sem observações',
-            status: encounter.status || 'completed'
+
+          // ✅ CORRIGIDO: Mapear medications do campo correto retornado pela API
+          medications: apiRecord.medications?.map((medication: any) => ({
+            id: medication.id || `med_${Date.now()}_${Math.random()}`,
+            name: medication.name || 'Medicamento não informado',
+            dosage: medication.dosage || 'Dosagem não informada',
+            frequency: medication.frequency || 'Frequência não informada',
+            start_date: medication.start_date ? new Date(medication.start_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            end_date: medication.end_date ? new Date(medication.end_date).toISOString().split('T')[0] : undefined,
+            prescribed_by: medication.doctor_name || medication.doctor?.profile?.name || 'Médico não informado',
+            status: medication.status || 'active',
+            instructions: medication.instructions || 'Sem instruções'
           })) || [],
-          exams: apiRecord.medical_exams?.map((exam: any) => ({
-            id: exam.id,
-            name: exam.exam_type || 'Exame não informado',
-            date: exam.date ? new Date(exam.date).toISOString().split('T')[0] : '',
-            result: exam.result || 'Resultado não informado',
-            status: exam.status || 'completed',
-            laboratory: exam.laboratory || 'Laboratório não informado'
+          // ✅ CORRIGIDO: Mapear consultations do campo correto retornado pela API
+          consultations: apiRecord.consultations?.map((consultation: any) => ({
+            id: consultation.id || `cons_${Date.now()}_${Math.random()}`,
+            date: consultation.date ? new Date(consultation.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            doctor_name: consultation.doctor_name || consultation.doctor?.profile?.name || 'Médico não informado',
+            specialty: consultation.specialty || 'Especialidade não informada',
+            reason: consultation.reason || 'Motivo não informado',
+            diagnosis: consultation.diagnosis || 'Diagnóstico não informado',
+            prescription: consultation.prescription || 'Prescrição não informada',
+            notes: consultation.notes || 'Sem observações',
+            status: consultation.status || 'completed'
           })) || [],
-          documents: apiRecord.medical_documents?.map((doc: any) => ({
-            id: doc.id,
+          // ✅ CORRIGIDO: Mapear exams do campo correto retornado pela API
+          exams: apiRecord.exams?.map((exam: any) => ({
+            id: exam.id || `exam_${Date.now()}_${Math.random()}`,
+            name: exam.name || 'Exame não informado',
+            date: exam.date ? new Date(exam.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            type: exam.type || 'Tipo não informado',
+            lab: exam.lab || 'Laboratório não informado',
+            laboratory: exam.lab || 'Laboratório não informado', // ✅ Mantido para compatibilidade com interface
+            results: exam.results || 'Resultado não informado',  // ✅ Campo principal para resultados
+            doctor_name: exam.doctor_name || exam.doctor?.profile?.name || 'Médico não informado',
+            file_url: exam.file_url || undefined,
+            status: exam.status || 'completed'
+          })) || [],
+          // ✅ CORRIGIDO: Mapear documents do campo correto retornado pela API
+          documents: apiRecord.documents?.map((doc: any) => ({
+            id: doc.id || `doc_${Date.now()}_${Math.random()}`,
             name: doc.name || 'Documento não informado',
             type: doc.type || 'document',
-            date: doc.date ? new Date(doc.date).toISOString().split('T')[0] : '',
-            file_url: doc.file_path || '#',
-            size: doc.file_size || 'Tamanho não informado'
+            date: doc.date ? new Date(doc.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            description: doc.description || 'Sem descrição',
+            file_url: doc.file_url || '#', // ✅ CORRIGIDO: Usar apenas file_url
+            size: doc.size || 'Tamanho não informado',
+            added_by: doc.added_by || doc.uploaded_by || 'Usuário não informado'
           })) || [],
           created_at: apiRecord.created_at ? new Date(apiRecord.created_at).toISOString().split('T')[0] : '',
           updated_at: apiRecord.updated_at ? new Date(apiRecord.updated_at).toISOString().split('T')[0] : ''
         };
 
+        console.log('🔍 DEBUG - Dados transformados dos exames:', transformedRecord.exams);
+        console.log('🔍 DEBUG - Email mapeado:', {
+          fromUser: apiRecord.patient?.user?.email,
+          fromProfileEmails: apiRecord.patient?.profile_emails?.[0]?.email,
+          final: transformedRecord.patient_email
+        });
         setMedicalRecord(transformedRecord);
         
       } catch (apiError) {
         console.warn('Falha ao buscar prontuário da API, usando dados mockados:', apiError);
         
         // Fallback para dados mockados
-        const mockRecord: MedicalRecord = {
+        const mockRecord: MedicalRecordType = {
           id: '1',
           patient_id: patientId,
           patient_name: 'Maria Silva Santos',
@@ -320,13 +300,7 @@ const MedicalRecord: React.FC = () => {
           weight: 68,
           allergies: ['Penicilina', 'Dipirona'],
           chronic_diseases: ['Hipertensão', 'Diabetes tipo 2'],
-          vital_signs: {
-            blood_pressure: '120/80',
-            heart_rate: 72,
-            temperature: 36.8,
-            oxygen_saturation: 98,
-            last_updated: '2024-04-20'
-          },
+
           medications: [
             {
               id: '1',
@@ -353,7 +327,8 @@ const MedicalRecord: React.FC = () => {
               date: '2024-03-15',
               doctor_name: 'Dr. João Silva',
               specialty: 'Clínico Geral',
-              diagnosis: 'Hipertensão controlada',
+              reason: 'Hipertensão controlada',
+              diagnosis: 'Hipertensão arterial controlada',
               prescription: 'Continuar Losartana',
               notes: 'Paciente apresentou melhora significativa',
               status: 'completed'
@@ -363,7 +338,8 @@ const MedicalRecord: React.FC = () => {
               date: '2024-04-20',
               doctor_name: 'Dr. Ana Costa',
               specialty: 'Endocrinologia',
-              diagnosis: 'Diabetes tipo 2',
+              reason: 'Diabetes tipo 2',
+              diagnosis: 'Diabetes mellitus tipo 2',
               prescription: 'Iniciar Metformina',
               notes: 'Primeira consulta endocrinológica',
               status: 'completed'
@@ -374,17 +350,23 @@ const MedicalRecord: React.FC = () => {
               id: '1',
               name: 'Hemograma Completo',
               date: '2024-03-10',
-              result: 'Normal',
-              status: 'completed',
-              laboratory: 'Laboratório Central'
+              type: 'Hemograma',
+              lab: 'Laboratório Central',
+              laboratory: 'Laboratório Central', // ✅ Mantido para compatibilidade
+              results: 'Normal',                 // ✅ Campo principal
+              doctor_name: 'Dr. João Silva',
+              status: 'completed'
             },
             {
               id: '2',
               name: 'Glicemia em Jejum',
               date: '2024-04-15',
-              result: '120 mg/dL',
-              status: 'completed',
-              laboratory: 'Laboratório Central'
+              type: 'Glicemia',
+              lab: 'Laboratório Central',
+              laboratory: 'Laboratório Central', // ✅ Mantido para compatibilidade
+              results: '120 mg/dL',              // ✅ Campo principal
+              doctor_name: 'Dr. João Silva',
+              status: 'completed'
             }
           ],
           documents: [
@@ -393,16 +375,20 @@ const MedicalRecord: React.FC = () => {
               name: 'Prescrição - Dr. João Silva',
               type: 'prescription',
               date: '2024-03-15',
+              description: 'Prescrição médica',
               file_url: '#',
-              size: '245 KB'
+              size: '245 KB',
+              added_by: 'Dr. João Silva'
             },
             {
               id: '2',
               name: 'Resultado Hemograma',
               type: 'exam_result',
               date: '2024-03-10',
+              description: 'Resultado do exame de hemograma',
               file_url: '#',
-              size: '1.2 MB'
+              size: '1.2 MB',
+              added_by: 'Laboratório Central'
             }
           ],
           created_at: '2024-01-15',
@@ -438,19 +424,15 @@ const MedicalRecord: React.FC = () => {
           throw new Error('Token ou dados do usuário não encontrados');
         }
 
-        let apiUrl = 'http://localhost:3000/api/patients';
-        
-        // Se for médico, buscar pacientes por unidade de saúde
-        if (hasRole('DOCTOR') && authUser.health_unit_id) {
-          apiUrl = `http://localhost:3000/api/patients/by-health-unit/${authUser.health_unit_id}`;
-          console.log('🏥 Médico detectado, usando endpoint por unidade de saúde');
-          console.log('Health Unit ID:', authUser.health_unit_id);
-        }
+        // ✅ USAR ENDPOINT ÚNICO: O backend já filtra automaticamente baseado no usuário logado
+        const apiUrl = 'http://localhost:3000/api/patients';
+        console.log('🏥 Usando endpoint único /patients - o backend filtra automaticamente por território');
 
         console.log('📡 URL da API:', apiUrl);
         console.log('🔑 Token (primeiros 20 chars):', token?.substring(0, 20) + '...');
         console.log('👤 User ID:', authUser.id);
         console.log('🏥 Health Unit ID:', authUser.health_unit_id);
+        console.log('🔍 O backend filtrará automaticamente os pacientes baseado no território do usuário logado');
         
         const requestHeaders = {
           'Authorization': `Bearer ${token}`,
@@ -500,8 +482,8 @@ const MedicalRecord: React.FC = () => {
           address: patient.profile?.profile_addresses?.[0] ? 
             `${patient.profile.profile_addresses[0].address}, ${patient.profile.profile_addresses[0].number} - ${patient.profile.profile_addresses[0].city}/${patient.profile.profile_addresses[0].state}` : 
             'Endereço não informado',
-          ubs_name: authUser.health_unit_name || 'UBS não informada',
-          doctor_name: authUser.name || authUser.profile?.name || 'Médico não informado'
+          ubs_name: 'UBS não informada', // ✅ Removido campo inexistente
+          doctor_name: authUser.profile?.name || 'Médico não informado'
         }));
 
         setPatients(transformedPatients);
@@ -587,7 +569,7 @@ const MedicalRecord: React.FC = () => {
   };
 
   // Funções para edição
-  const handleEditRecord = (record: MedicalRecord) => {
+  const handleEditRecord = (record: MedicalRecordType) => {
     console.log('handleEditRecord chamado com:', record);
     console.log('Abrindo modal de edição...');
     setEditingRecord({ ...record });
@@ -595,7 +577,7 @@ const MedicalRecord: React.FC = () => {
     console.log('Modal aberto, editingRecord:', { ...record });
   };
 
-  const handleSaveEdit = async (updatedRecord: MedicalRecord) => {
+  const handleSaveEdit = async (updatedRecord: MedicalRecordType) => {
     console.log('handleSaveEdit chamado com updatedRecord:', updatedRecord);
     if (!updatedRecord || !updatedRecord.id) return;
     
@@ -603,17 +585,17 @@ const MedicalRecord: React.FC = () => {
       setEditLoading(true);
       
       // Fazer requisição real para o backend
-      const response = await axios.put(`/api/medical-records/${updatedRecord.id}`, {
-        patient_name: updatedRecord.patient_name,
-        patient_email: updatedRecord.patient_email,
-        patient_phone: updatedRecord.patient_phone,
-        patient_address: updatedRecord.patient_address,
-        allergies: updatedRecord.allergies,
-        chronic_diseases: updatedRecord.chronic_diseases,
+      const response = await axios.put(`medical-records/${updatedRecord.id}`, {
+        patient_name: updatedRecord.patient_name || '',
+        patient_email: updatedRecord.patient_email || '',
+        patient_phone: updatedRecord.patient_phone || '',
+        patient_address: updatedRecord.patient_address || '',
+        allergies: updatedRecord.allergies || [],
+        chronic_diseases: updatedRecord.chronic_diseases || [],
         // Campos adicionais de dados médicos - altura em cm
-        height: updatedRecord.height,
-        weight: updatedRecord.weight,
-        blood_type: updatedRecord.blood_type
+        height: updatedRecord.height || 0,
+        weight: updatedRecord.weight || 0,
+        blood_type: updatedRecord.blood_type || ''
       }, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -647,15 +629,15 @@ const MedicalRecord: React.FC = () => {
       console.error('Status do erro:', error.response?.status);
       console.error('Mensagem do backend:', error.response?.data?.message);
       console.error('Payload enviado:', {
-        patient_name: updatedRecord.patient_name,
-        patient_email: updatedRecord.patient_email,
-        patient_phone: updatedRecord.patient_phone,
-        patient_address: updatedRecord.patient_address,
-        allergies: updatedRecord.allergies,
-        chronic_diseases: updatedRecord.chronic_diseases,
-        height: updatedRecord.height,
-        weight: updatedRecord.weight,
-        blood_type: updatedRecord.blood_type
+        patient_name: updatedRecord.patient_name || '',
+        patient_email: updatedRecord.patient_email || '',
+        patient_phone: updatedRecord.patient_phone || '',
+        patient_address: updatedRecord.patient_address || '',
+        allergies: updatedRecord.allergies || [],
+        chronic_diseases: updatedRecord.chronic_diseases || [],
+        height: updatedRecord.height || 0,
+        weight: updatedRecord.weight || 0,
+        blood_type: updatedRecord.blood_type || ''
       });
       
       // Mostrar mensagem de erro específica se disponível
@@ -743,10 +725,9 @@ const MedicalRecord: React.FC = () => {
 
   // Renderizar interface baseada no role
   if (isPatient()) {
-    return <PatientMedicalRecord context={context} medicalRecord={medicalRecord} loading={loading} />;
+    return <PatientMedicalRecord medicalRecord={medicalRecord} loading={loading} />;
   } else if (isDoctor()) {
     return <DoctorMedicalRecord 
-      context={context} 
       patients={patients} 
       medicalRecord={medicalRecord} 
       loading={loading} 
@@ -763,7 +744,6 @@ const MedicalRecord: React.FC = () => {
   } else if (isMaster()) {
     // Renderização específica para MASTER
     return <AdminMedicalRecord 
-      context={context} 
       patients={patients} 
       medicalRecord={medicalRecord} 
       loading={loading} 
@@ -773,7 +753,6 @@ const MedicalRecord: React.FC = () => {
   } else if (isAdmin()) {
     // Renderização específica para ADMIN
     return <AdminMedicalRecord 
-      context={context} 
       patients={patients} 
       medicalRecord={medicalRecord} 
       loading={loading} 
@@ -787,7 +766,7 @@ const MedicalRecord: React.FC = () => {
 
 // Interface para PATIENT
 const PatientMedicalRecord: React.FC<{ 
-  medicalRecord: MedicalRecord | null; 
+  medicalRecord: MedicalRecordType | null;
   loading: boolean;
 }> = ({ medicalRecord, loading }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -828,8 +807,8 @@ const PatientMedicalRecord: React.FC<{
                 <div className="flex flex-wrap items-center mt-1">
                   <Calendar className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                   <span className="text-xs md:text-sm">
-                    {new Date(medicalRecord.patient_birth_date).toLocaleDateString('pt-BR')} 
-                    ({new Date().getFullYear() - new Date(medicalRecord.patient_birth_date).getFullYear()} anos)
+                    {medicalRecord.patient_birth_date ? new Date(medicalRecord.patient_birth_date).toLocaleDateString('pt-BR') : 'Data não informada'} 
+                    {medicalRecord.patient_birth_date ? `(${new Date().getFullYear() - new Date(medicalRecord.patient_birth_date).getFullYear()} anos)` : ''}
                   </span>
                 </div>
               </div>
@@ -932,7 +911,7 @@ const PatientMedicalRecord: React.FC<{
               <div>
                 <p className="text-xs md:text-sm text-gray-500">Alergias</p>
                 <p className="font-medium text-sm md:text-base truncate">
-                  {medicalRecord.allergies.length > 0 
+                  {medicalRecord.allergies && medicalRecord.allergies.length > 0 
                     ? medicalRecord.allergies.join(', ')
                     : 'Nenhuma alergia registrada'}
                 </p>
@@ -943,7 +922,7 @@ const PatientMedicalRecord: React.FC<{
               <div>
                 <p className="text-xs md:text-sm text-gray-500">Doenças Crônicas</p>
                 <p className="font-medium text-sm md:text-base truncate">
-                  {medicalRecord.chronic_diseases.length > 0 
+                  {medicalRecord.chronic_diseases && medicalRecord.chronic_diseases.length > 0 
                     ? medicalRecord.chronic_diseases.join(', ')
                     : 'Nenhuma doença crônica registrada'}
                 </p>
@@ -998,10 +977,10 @@ const PatientMedicalRecord: React.FC<{
         <div className="p-6 md:p-8">
           <div className="animate-fadeIn">
             {activeTab === 'overview' && <OverviewTab medicalRecord={medicalRecord} />}
-            {activeTab === 'consultations' && <ConsultationsTab consultations={medicalRecord.consultations} />}
-            {activeTab === 'medications' && <MedicationsTab medications={medicalRecord.medications} />}
-            {activeTab === 'exams' && <ExamsTab exams={medicalRecord.exams} />}
-            {activeTab === 'documents' && <DocumentsTab documents={medicalRecord.documents} />}
+            {activeTab === 'consultations' && <ConsultationsTab consultations={medicalRecord.consultations || []} />}
+            {activeTab === 'medications' && <MedicationsTab medications={medicalRecord.medications || []} />}
+            {activeTab === 'exams' && <ExamsTab exams={medicalRecord.exams || []} />}
+            {activeTab === 'documents' && <DocumentsTab documents={medicalRecord.documents || []} />}
           </div>
         </div>
       </div>
@@ -1013,13 +992,12 @@ const PatientMedicalRecord: React.FC<{
 
 // Interface para ADMIN
 const AdminMedicalRecord: React.FC<{ 
-  context: any; 
   patients: Patient[]; 
-  medicalRecord: MedicalRecord | null;
+  medicalRecord: MedicalRecordType | null;
   loading: boolean;
   onPatientSelect: (patient: Patient) => void;
   onBackToList: () => void;
-}> = ({ context, patients, medicalRecord, loading, onPatientSelect, onBackToList }) => {
+}> = ({ patients, medicalRecord, loading, onPatientSelect, onBackToList }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
@@ -1060,7 +1038,6 @@ const AdminMedicalRecord: React.FC<{
 
         {/* Conteúdo do prontuário específico (somente visualização) */}
         <PatientMedicalRecord 
-          context={context} 
           medicalRecord={medicalRecord} 
           loading={loading} 
         />
@@ -1144,7 +1121,7 @@ const AdminMedicalRecord: React.FC<{
 };
 
 // Componentes de Tabs
-const OverviewTab: React.FC<{ medicalRecord: MedicalRecord }> = ({ medicalRecord }) => (
+const OverviewTab: React.FC<{ medicalRecord: MedicalRecordType }> = ({ medicalRecord }) => (
   <div className="space-y-4 md:space-y-6">
     {/* Alergias - Destaque Crítico */}
     <div>
@@ -1153,7 +1130,7 @@ const OverviewTab: React.FC<{ medicalRecord: MedicalRecord }> = ({ medicalRecord
         Alergias
       </h3>
       <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-3 md:p-4 border border-red-200">
-        {medicalRecord.allergies.length > 0 ? (
+        {medicalRecord.allergies && medicalRecord.allergies.length > 0 ? (
           <div className="flex flex-wrap gap-2 md:gap-3">
             {medicalRecord.allergies.map((allergy, index) => (
               <span key={index} className="px-3 py-1 md:px-4 md:py-2 bg-red-200 text-red-800 text-xs md:text-sm rounded-full font-medium flex items-center">
@@ -1178,7 +1155,7 @@ const OverviewTab: React.FC<{ medicalRecord: MedicalRecord }> = ({ medicalRecord
         Doenças Crônicas
       </h3>
       <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-3 md:p-4 border border-yellow-200">
-        {medicalRecord.chronic_diseases.length > 0 ? (
+        {medicalRecord.chronic_diseases && medicalRecord.chronic_diseases.length > 0 ? (
           <div className="flex flex-wrap gap-2 md:gap-3">
             {medicalRecord.chronic_diseases.map((disease, index) => (
               <span key={index} className="px-3 py-1 md:px-4 md:py-2 bg-yellow-200 text-yellow-800 text-xs md:text-sm rounded-full font-medium flex items-center">
@@ -1356,13 +1333,13 @@ const MedicationsTab: React.FC<{ medications: Medication[] }> = ({ medications }
               </div>
             </div>
             
-            {medication.notes && (
+            {medication.instructions && (
               <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="w-4 h-4 text-blue-600" />
-                  <h5 className="text-sm font-medium text-gray-700">Observações</h5>
+                  <h5 className="text-sm font-medium text-gray-700">Instruções</h5>
                 </div>
-                <p className="text-sm text-gray-600">{medication.notes}</p>
+                <p className="text-sm text-gray-600">{medication.instructions}</p>
               </div>
             )}
           </div>
@@ -1387,21 +1364,24 @@ const ExamsTab: React.FC<{ exams: Exam[] }> = ({ exams }) => (
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full flex-shrink-0 ${{
                 completed: 'bg-green-500',
+                scheduled: 'bg-blue-500',
                 pending: 'bg-yellow-500',
                 cancelled: 'bg-red-500'
               }[exam.status] || 'bg-gray-400'}`}></div>
               <div>
                 <h4 className="font-medium text-gray-900 text-sm md:text-base">{exam.name}</h4>
-                <span className="text-xs text-gray-500">{exam.laboratory}</span>
+                <span className="text-xs text-gray-500">{exam.lab}</span>
               </div>
             </div>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${{
               completed: 'bg-green-100 text-green-800',
+              scheduled: 'bg-blue-100 text-blue-800',
               pending: 'bg-yellow-100 text-yellow-800',
               cancelled: 'bg-red-100 text-red-800'
             }[exam.status] || 'bg-gray-100 text-gray-600'}`}>
               {{
                 completed: 'Concluído',
+                scheduled: 'Agendado',
                 pending: 'Pendente',
                 cancelled: 'Cancelado'
               }[exam.status] || 'Desconhecido'}
@@ -1427,31 +1407,28 @@ const ExamsTab: React.FC<{ exams: Exam[] }> = ({ exams }) => (
                   <TestTube className="w-4 h-4 text-green-500" />
                   <h5 className="text-sm font-medium text-gray-700">Resultado</h5>
                 </div>
-                <p className="text-sm text-gray-600">{exam.result || "Não informado"}</p>
+                <p className="text-sm text-gray-600">{exam.results || "Não informado"}</p>
               </div>
             </div>
             
-            {exam.notes && (
+
+            
+            {exam.results && (
               <div className="mt-4 bg-green-50 border border-green-100 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="w-4 h-4 text-green-600" />
-                  <h5 className="text-sm font-medium text-gray-700">Observações</h5>
+                  <h5 className="text-sm font-medium text-gray-700">Resultado</h5>
                 </div>
-                <p className="text-sm text-gray-600">{exam.notes}</p>
+                <p className="text-sm text-gray-600">{exam.results}</p>
               </div>
             )}
             
-            {exam.file_url && (
+            {exam.lab && (
               <div className="mt-4">
-                <a 
-                  href={exam.file_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors"
-                >
+                <div className="inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium">
                   <FileText className="w-4 h-4" />
-                  Visualizar documento do exame
-                </a>
+                  Laboratório: {exam.lab}
+                </div>
               </div>
             )}
           </div>
@@ -1476,10 +1453,10 @@ const DocumentsTab: React.FC<{ documents: Document[] }> = ({ documents }) => (
             <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-blue-100 rounded">
-                  {document.type === 'pdf' ? (
-                    <File className="w-4 h-4 text-blue-600" />
-                  ) : document.type === 'image' ? (
-                    <Image className="w-4 h-4 text-blue-600" />
+                  {document.type === 'medical_report' ? (
+                    <FileText className="w-4 h-4 text-red-600" />
+                  ) : document.type === 'exam_result' ? (
+                    <FileText className="w-4 h-4 text-green-600" />
                   ) : (
                     <FileText className="w-4 h-4 text-blue-600" />
                   )}
@@ -1499,7 +1476,7 @@ const DocumentsTab: React.FC<{ documents: Document[] }> = ({ documents }) => (
                 </div>
                 <div className="flex-shrink-0">
                   <a 
-                    href={document.url} 
+                    href={document.file_url || '#'} 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors"
@@ -1532,23 +1509,21 @@ const DocumentsTab: React.FC<{ documents: Document[] }> = ({ documents }) => (
 
 // Componente específico para DOCTOR
 interface DoctorMedicalRecordProps {
-  context: any;
   patients: Patient[];
-  medicalRecord: MedicalRecord | null;
+  medicalRecord: MedicalRecordType | null;
   loading: boolean;
   onPatientSelect: (patient: Patient) => void;
-  onEditRecord: (record: MedicalRecord) => void;
+  onEditRecord: (record: MedicalRecordType) => void;
   onDeleteRecord: (patientId: string) => void;
   onBackToList: () => void;
   isEditModalOpen: boolean;
-  editingRecord: MedicalRecord | null;
-  onSaveEdit: (updatedRecord: MedicalRecord) => void;
+  editingRecord: MedicalRecordType | null;
+  onSaveEdit: (updatedRecord: MedicalRecordType) => void;
   onCancelEdit: () => void;
   editLoading: boolean;
 }
 
 const DoctorMedicalRecord: React.FC<DoctorMedicalRecordProps> = ({
-  context,
   patients,
   medicalRecord,
   loading,
@@ -1584,42 +1559,35 @@ const DoctorMedicalRecord: React.FC<DoctorMedicalRecordProps> = ({
               </div>
             </div>
             <div className="flex space-x-2">
-              {context.permissions.canCreate && (
-                <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova Consulta
-                </button>
-              )}
-              {context.permissions.canEdit && (
-                <button 
-                  onClick={() => {
-                    console.log('Botão Editar clicado, medicalRecord:', medicalRecord);
-                    if (medicalRecord) {
-                      onEditRecord(medicalRecord);
-                    }
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </button>
-              )}
-              {context.permissions.canDelete && (
-                <button 
-                  onClick={() => medicalRecord && onDeleteRecord(medicalRecord.patient_id)}
-                  className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
-                </button>
-              )}
+              <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Consulta
+              </button>
+              <button 
+                onClick={() => {
+                  console.log('Botão Editar clicado, medicalRecord:', medicalRecord);
+                  if (medicalRecord) {
+                    onEditRecord(medicalRecord);
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                <Edit2 className="w-4 h-4 mr-2" />
+                Editar
+              </button>
+              <button 
+                onClick={() => medicalRecord && onDeleteRecord(medicalRecord.patient_id)}
+                className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-md hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </button>
             </div>
           </div>
         </div>
 
         {/* Conteúdo do prontuário específico */}
         <PatientMedicalRecord 
-          context={context} 
           medicalRecord={medicalRecord} 
           loading={loading} 
         />
@@ -1651,12 +1619,10 @@ const DoctorMedicalRecord: React.FC<DoctorMedicalRecordProps> = ({
             </div>
           </div>
           <div className="flex space-x-2">
-            {context.permissions.canCreate && (
-              <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Prontuário
-              </button>
-            )}
+            <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Prontuário
+            </button>
           </div>
         </div>
 
@@ -1709,32 +1675,28 @@ const DoctorMedicalRecord: React.FC<DoctorMedicalRecordProps> = ({
                       <p className="text-sm text-gray-500">{patient.doctor_name}</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {context.permissions.canEdit && (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Selecionar o paciente e depois abrir modal de edição
-                            console.log('Clicou no botão de edição da lista, paciente:', patient.name);
-                            onPatientSelect(patient);
-                          }}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                          title="Visualizar e editar prontuário"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      )}
-                      {context.permissions.canDelete && (
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteRecord(patient.id);
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Excluir prontuário"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Selecionar o paciente e depois abrir modal de edição
+                          console.log('Clicou no botão de edição da lista, paciente:', patient.name);
+                          onPatientSelect(patient);
+                        }}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Visualizar e editar prontuário"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteRecord(patient.id);
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Excluir prontuário"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                       <ChevronRight className="w-5 h-5 text-gray-400" />
                     </div>
                   </div>

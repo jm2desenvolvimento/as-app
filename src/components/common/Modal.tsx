@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Video, Star, FileText, Download } from 'lucide-react';
+import { X, Star, FileText, Download } from 'lucide-react';
 
 // Componente para detalhes de consulta
 const AppointmentDetailsModal: React.FC<{ appointment: any }> = ({ appointment }) => {
@@ -150,7 +150,6 @@ const Modal: React.FC<ModalProps> = ({
   className = '',
   showOverlay = true,
   appointment,
-  appointmentId,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 

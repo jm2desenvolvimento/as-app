@@ -1,21 +1,32 @@
-import React from "react";
-import StatCard from "./StatCard";
-import { Users, UserCheck, Hospital, GraduationCap, TrendingUp, Calendar, CheckCircle, AlertCircle, Building2, Edit, Trash2 } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  BarChart,
-  Bar
+import React, { useState } from 'react';
+import { 
+  Users, 
+  Calendar, 
+  TrendingUp, 
+  Hospital, 
+  GraduationCap, 
+  Building2, 
+  LineChart as LineChartIcon, 
+  BarChart as BarChartIcon, 
+  Edit, 
+  Trash2, 
+  UserCheck, 
+  CheckCircle, 
+  AlertCircle 
+} from 'lucide-react';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar 
 } from 'recharts';
-import { useState } from 'react';
-import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
-import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
+import { usePermission } from '../../hooks/usePermission';
 
 const stats = [
   {

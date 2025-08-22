@@ -43,9 +43,23 @@ interface Doctor {
       id: string;
       crm_number: string;
       crm_uf: string;
+      specialty?: string; // ✅ Adicionado para visualização
     };
     cpf?: string; // Adicionado para visualização
   };
+}
+
+// ✅ Interface para endereços do formulário
+interface AddressForm {
+  address: string;
+  number: string;
+  complement: string;
+  district: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  address_type: string;
+  is_primary: boolean;
 }
 
 const Doctors = () => {
@@ -78,13 +92,13 @@ const Doctors = () => {
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    birth_date: '',
-  });
-  const [errors, setErrors] = useState<any>({});
+  // const [form, setForm] = useState({
+  //   name: '',
+  //   email: '',
+  //   phone: '',
+  //   birth_date: '',
+  // }); // Removido pois não está sendo usado
+  // const [errors, setErrors] = useState<any>({}); // Removido pois não está sendo usado
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewDoctor, setViewDoctor] = useState<Doctor | null>(null);
 
@@ -95,7 +109,7 @@ const Doctors = () => {
   const [selectedHealthUnit, setSelectedHealthUnit] = useState('');
 
   // Novo estado para etapa do modal
-  const [modalStep, setModalStep] = useState<number>(1);
+  const [modalStep, setModalStep] = useState<1 | 2 | 3 | 4>(1);
   const [userForm, setUserForm] = useState({
     email: '',
     password: '',
@@ -111,6 +125,7 @@ const Doctors = () => {
     gender: '',
     crm_number: '',
     crm_uf: '',
+    specialty: '', // ✅ NOVO CAMPO: ESPECIALIDADE
   });
   const [profileErrors, setProfileErrors] = useState<any>({});
 
@@ -124,7 +139,7 @@ const Doctors = () => {
   const [contactErrors, setContactErrors] = useState<any>({});
 
   // Estado para etapa 4
-  const [addresses, setAddresses] = useState([
+  const [addresses, setAddresses] = useState<AddressForm[]>([
     {
       address: '',
       number: '',
@@ -204,7 +219,7 @@ const Doctors = () => {
     setModalStep(1);
     setEditId(null);
     setUserForm({ email: '', password: '', confirmPassword: '', cpf: '' });
-    setProfileForm({ name: '', birth_date: '', gender: '', crm_number: '', crm_uf: '' });
+    setProfileForm({ name: '', birth_date: '', gender: '', crm_number: '', crm_uf: '', specialty: '' });
     setPhones([{ phone: '', phone_type: 'Celular', is_primary: true }]);
     setEmails([{ email: '' }]);
     setAddresses([{
@@ -230,10 +245,21 @@ const Doctors = () => {
       gender: doctor.profile?.gender || '',
       crm_number: doctor.profile?.profile_doctor?.crm_number || '',
       crm_uf: doctor.profile?.profile_doctor?.crm_uf || '',
+      specialty: doctor.profile?.profile_doctor?.specialty || '', // ✅ NOVO CAMPO: ESPECIALIDADE
     });
     setPhones(doctor.profile?.profile_phones?.length ? doctor.profile.profile_phones : [{ phone: '', phone_type: 'Celular', is_primary: true }]);
     setEmails(doctor.profile?.profile_emails?.length ? doctor.profile.profile_emails : [{ email: '' }]);
-    setAddresses(doctor.profile?.profile_addresses?.length ? doctor.profile.profile_addresses : [{
+    setAddresses(doctor.profile?.profile_addresses?.length ? doctor.profile.profile_addresses.map(addr => ({
+      address: addr.address || '',
+      number: addr.number || '',
+      complement: addr.complement || '',
+      district: addr.district || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      zip_code: addr.zip_code || '',
+      address_type: addr.address_type || 'Residencial',
+      is_primary: addr.is_primary || false
+    })) : [{
       address: '', number: '', complement: '', district: '', city: '', state: '', zip_code: '', address_type: 'Residencial', is_primary: true
     }]);
     setIsModalOpen(true);
@@ -286,6 +312,7 @@ const Doctors = () => {
   const validateProfileStep = () => {
     const newErrors: any = {};
     if (!profileForm.name) newErrors.name = 'Nome obrigatório';
+    if (!profileForm.specialty) newErrors.specialty = 'Especialidade obrigatória'; // ✅ NOVA VALIDAÇÃO
     setProfileErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -382,6 +409,7 @@ const Doctors = () => {
       gender: profileForm.gender,
       crm_number: profileForm.crm_number,
       crm_uf: profileForm.crm_uf,
+      specialty: profileForm.specialty, // ✅ NOVO CAMPO: ESPECIALIDADE
       // ✅ NOVOS CAMPOS TERRITORIAIS
       city_id: selectedCityHall,
       health_unit_id: selectedHealthUnit,
@@ -506,16 +534,16 @@ const Doctors = () => {
             <>
               <div className="flex items-center justify-center mb-6">
                 <div className="flex gap-2 items-center">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 1 ? 'bg-blue-600' : 'bg-gray-300'}`}>1</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-blue-600">1</div>
                   <span className="font-medium text-blue-700">Dados de Usuário</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 2 ? 'bg-blue-600' : 'bg-gray-300'}`}>2</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">2</div>
                   <span className="font-medium text-gray-500">Dados do Perfil</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 3 ? 'bg-blue-600' : 'bg-gray-300'}`}>3</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">3</div>
                   <span className="font-medium text-gray-500">Contatos</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 4 ? 'bg-blue-600' : 'bg-gray-300'}`}>4</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">4</div>
                   <span className="font-medium text-gray-500">Endereço</span>
                 </div>
               </div>
@@ -665,16 +693,16 @@ const Doctors = () => {
             <>
               <div className="flex items-center justify-center mb-6">
                 <div className="flex gap-2 items-center">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 1 ? 'bg-blue-600' : 'bg-gray-300'}`}>1</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">1</div>
                   <span className="font-medium text-gray-500">Dados de Usuário</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 2 ? 'bg-blue-600' : 'bg-gray-300'}`}>2</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-blue-600">2</div>
                   <span className="font-medium text-blue-700">Dados do Perfil</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 3 ? 'bg-blue-600' : 'bg-gray-300'}`}>3</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">3</div>
                   <span className="font-medium text-gray-500">Contatos</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 4 ? 'bg-blue-600' : 'bg-gray-300'}`}>4</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">4</div>
                   <span className="font-medium text-gray-500">Endereço</span>
                 </div>
               </div>
@@ -763,6 +791,52 @@ const Doctors = () => {
                     </select>
                   </div>
                 </div>
+                
+                {/* ✅ NOVO CAMPO: ESPECIALIDADE */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Especialidade *</label>
+                  <select
+                    value={profileForm.specialty}
+                    onChange={e => setProfileForm({...profileForm, specialty: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Selecione a especialidade</option>
+                    <option value="Clínico Geral">Clínico Geral</option>
+                    <option value="Cardiologia">Cardiologia</option>
+                    <option value="Pediatria">Pediatria</option>
+                    <option value="Ortopedia">Ortopedia</option>
+                    <option value="Ginecologia">Ginecologia</option>
+                    <option value="Dermatologia">Dermatologia</option>
+                    <option value="Oftalmologia">Oftalmologia</option>
+                    <option value="Psiquiatria">Psiquiatria</option>
+                    <option value="Neurologia">Neurologia</option>
+                    <option value="Urologia">Urologia</option>
+                    <option value="Endocrinologia">Endocrinologia</option>
+                    <option value="Pneumologia">Pneumologia</option>
+                    <option value="Oncologia">Oncologia</option>
+                    <option value="Gastroenterologia">Gastroenterologia</option>
+                    <option value="Hematologia">Hematologia</option>
+                    <option value="Reumatologia">Reumatologia</option>
+                    <option value="Infectologia">Infectologia</option>
+                    <option value="Nefrologia">Nefrologia</option>
+                    <option value="Cirurgia Geral">Cirurgia Geral</option>
+                    <option value="Cirurgia Cardíaca">Cirurgia Cardíaca</option>
+                    <option value="Cirurgia Vascular">Cirurgia Vascular</option>
+                    <option value="Cirurgia Plástica">Cirurgia Plástica</option>
+                    <option value="Anestesiologia">Anestesiologia</option>
+                    <option value="Radiologia">Radiologia</option>
+                    <option value="Medicina Nuclear">Medicina Nuclear</option>
+                    <option value="Patologia">Patologia</option>
+                    <option value="Medicina Legal">Medicina Legal</option>
+                    <option value="Medicina do Trabalho">Medicina do Trabalho</option>
+                    <option value="Medicina Esportiva">Medicina Esportiva</option>
+                    <option value="Medicina de Família">Medicina de Família</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                  {profileErrors.specialty && <p className="text-red-500 text-sm mt-1">{profileErrors.specialty}</p>}
+                </div>
+
                 <div className="flex justify-between gap-2 pt-4">
                   <button
                     type="button"
@@ -786,16 +860,16 @@ const Doctors = () => {
             <>
               <div className="flex items-center justify-center mb-6">
                 <div className="flex gap-2 items-center">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 1 ? 'bg-blue-600' : 'bg-gray-300'}`}>1</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">1</div>
                   <span className="font-medium text-gray-500">Dados de Usuário</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 2 ? 'bg-blue-600' : 'bg-gray-300'}`}>2</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">2</div>
                   <span className="font-medium text-gray-500">Dados do Perfil</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 3 ? 'bg-blue-600' : 'bg-gray-300'}`}>3</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-blue-600">3</div>
                   <span className="font-medium text-blue-700">Contatos</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 4 ? 'bg-blue-600' : 'bg-gray-300'}`}>4</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">4</div>
                   <span className="font-medium text-gray-500">Endereço</span>
                 </div>
               </div>
@@ -918,16 +992,16 @@ const Doctors = () => {
             <>
               <div className="flex items-center justify-center mb-6">
                 <div className="flex gap-2 items-center">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 1 ? 'bg-blue-600' : 'bg-gray-300'}`}>1</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">1</div>
                   <span className="font-medium text-gray-500">Dados de Usuário</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 2 ? 'bg-blue-600' : 'bg-gray-300'}`}>2</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">2</div>
                   <span className="font-medium text-gray-500">Dados do Perfil</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 3 ? 'bg-blue-600' : 'bg-gray-300'}`}>3</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-gray-300">3</div>
                   <span className="font-medium text-gray-500">Contatos</span>
                   <div className="w-8 h-1 bg-blue-200 rounded mx-2" />
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold text-white ${modalStep === 4 ? 'bg-blue-600' : 'bg-gray-300'}`}>4</div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full font-bold text-white bg-blue-600">4</div>
                   <span className="font-medium text-blue-700">Endereço</span>
                 </div>
               </div>
@@ -1093,7 +1167,7 @@ const Doctors = () => {
                   <User className="h-4 w-4 text-blue-600" />
                   Dados do Usuário
                 </h3>
-                <div className="space-y-2">
+          <div className="space-y-2">
                   <div>
                     <label className="block text-xs font-medium text-gray-700">E-mail</label>
                     <p className="text-sm text-gray-900">{viewDoctor.email || 'N/A'}</p>
@@ -1139,6 +1213,10 @@ const Doctors = () => {
                         : 'N/A'
                       }
                     </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">Especialidade</label>
+                    <p className="text-sm text-gray-900">{viewDoctor.profile?.profile_doctor?.specialty || 'N/A'}</p>
                   </div>
                 </div>
               </div>

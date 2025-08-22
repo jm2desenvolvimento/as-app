@@ -36,21 +36,36 @@ const EditMedicalRecordModal: React.FC<EditMedicalRecordModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [formData, setFormData] = useState<Partial<MedicalRecord>>({});
-  const [isFormValid, setIsFormValid] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(true); // Inicializar como true
 
   useEffect(() => {
     if (record) {
+      console.log('🔄 [EditMedicalRecordModal] Record recebido:', record);
+      console.log('📊 [EditMedicalRecordModal] Dados do record:');
+      console.log('  - ID:', record.id);
+      console.log('  - Patient Name:', record.patient_name);
+      console.log('  - Medications:', record.medications?.length || 0, 'items');
+      console.log('  - Consultations:', record.consultations?.length || 0, 'items');
+      console.log('  - Exams:', record.exams?.length || 0, 'items');
+      console.log('  - Documents:', record.documents?.length || 0, 'items');
+      
       setFormData({ ...record });
+      console.log('✅ [EditMedicalRecordModal] FormData atualizado:', { ...record });
     }
   }, [record]);
 
   const handleSave = () => {
+    console.log('🔍 [EditMedicalRecordModal] handleSave chamado:', { record: !!record, isFormValid });
     if (record && isFormValid) {
+      console.log('✅ [EditMedicalRecordModal] Salvando...');
       onSave({ ...record, ...formData });
+    } else {
+      console.log('❌ [EditMedicalRecordModal] Não pode salvar:', { record: !!record, isFormValid });
     }
   };
 
   const handleValidationChange = (isValid: boolean) => {
+    console.log('🔍 [EditMedicalRecordModal] Validação mudou:', isValid);
     setIsFormValid(isValid);
   };
 
@@ -74,6 +89,20 @@ const EditMedicalRecordModal: React.FC<EditMedicalRecordModalProps> = ({
             <div>
               <h2 className="text-xl font-bold text-gray-900">Editar Prontuário</h2>
               <p className="text-gray-500">Paciente: {record.patient_name}</p>
+            </div>
+          </div>
+          
+          {/* ✅ NOVO: Texto de ajuda explicativo */}
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-2">
+              <div className="text-blue-600 mt-0.5">💡</div>
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Como funciona a edição:</p>
+                <ul className="space-y-1 text-xs">
+                  <li>• <strong>Exames, Documentos, Consultas e Medicamentos:</strong> Salvam automaticamente quando você clica em "Adicionar"</li>
+                  <li>• <strong>Dados do Paciente:</strong> Use o botão "Salvar Dados do Paciente" para salvar informações básicas (nome, endereço, etc.)</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -115,28 +144,32 @@ const EditMedicalRecordModal: React.FC<EditMedicalRecordModalProps> = ({
             <TabsContent value="consultations">
               <EditConsultationsTab 
                 formData={formData} 
-                setFormData={setFormData} 
+                setFormData={setFormData}
+                onValidationChange={handleValidationChange}
               />
             </TabsContent>
             
             <TabsContent value="medications">
               <EditMedicationsTab 
                 formData={formData} 
-                setFormData={setFormData} 
+                setFormData={setFormData}
+                onValidationChange={handleValidationChange}
               />
             </TabsContent>
             
             <TabsContent value="exams">
               <EditExamsTab 
                 formData={formData} 
-                setFormData={setFormData} 
+                setFormData={setFormData}
+                onValidationChange={handleValidationChange}
               />
             </TabsContent>
             
             <TabsContent value="documents">
               <EditDocumentsTab 
                 formData={formData} 
-                setFormData={setFormData} 
+                setFormData={setFormData}
+                onValidationChange={handleValidationChange}
               />
             </TabsContent>
           </div>
@@ -169,7 +202,7 @@ const EditMedicalRecordModal: React.FC<EditMedicalRecordModalProps> = ({
             ) : (
               <>
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Salvar Alterações
+                Salvar Dados do Paciente
               </>
             )}
           </button>

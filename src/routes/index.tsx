@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LayoutPage from '../pages/layoutpage/LayoutPage';
 import ProfileAndPermissions from '../components/common/ProfileAndPermissions.tsx/ProfileAndPermissions';
 import Home from '../pages/landingpage/Home';
-import { Home as HomeIcon, Users, Calendar, FileText, Settings, User, ClipboardList, Shield, Landmark, Building2, Stethoscope, CalendarIcon } from 'lucide-react';
+import { Home as HomeIcon, Users, Calendar, FileText, Settings, User, Shield, Landmark, Building2, Stethoscope, CalendarIcon } from 'lucide-react';
 import { PERMISSIONS, usePermission } from '../hooks/usePermission';
 import CityHall from '../components/admin/municipalManagement/CityHall';
 import HealthUnit from '../components/admin/municipalManagement/HealthUnit';
@@ -114,9 +114,6 @@ function AdminDashboard() {
 function UnitsPage() {
   return <div className="text-xl">Gestão de Unidades</div>;
 }
-function SettingsPage() {
-  return <div className="text-xl">Configurações</div>;
-}
 function SchedulePage() {
   return <div className="text-xl">Agenda Médica</div>;
 }
@@ -163,7 +160,7 @@ function RequireAccess({
 }
 
 function RoleSettingsRoute() {
-  const { isMaster, isAdmin, isDoctor, isPatient } = usePermission();
+  const { isMaster, isAdmin, isDoctor } = usePermission();
   const sidebar = isMaster() ? masterSidebar : isAdmin() ? adminSidebar : isDoctor() ? doctorSidebar : patientSidebar;
   return (
     <LayoutPage sidebarItems={sidebar}>

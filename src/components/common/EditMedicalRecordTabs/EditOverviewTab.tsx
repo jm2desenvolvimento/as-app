@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { MedicalRecord } from '../../../types/medical-record';
 
 interface ValidationErrors {
@@ -78,17 +78,73 @@ const EditOverviewTab: React.FC<EditOverviewTabProps> = ({ formData, setFormData
   };
 
   // Função para atualizar erros e notificar validação
-  const updateErrors = (newErrors: ValidationErrors) => {
+  const updateErrors = useCallback((newErrors: ValidationErrors) => {
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
+    console.log('🔍 [EditOverviewTab] Validação:', { newErrors, isValid });
     onValidationChange?.(isValid);
-  };
+  }, [onValidationChange]);
+
+  // Função para validar o formulário
+  const validateForm = useCallback(() => {
+    console.log('🔍 [EditOverviewTab] Validando formulário com dados:', {
+      patient_name: formData.patient_name,
+      patient_email: formData.patient_email,
+      patient_phone: formData.patient_phone
+    });
+    
+    const newErrors: ValidationErrors = {};
+    
+    // Validar nome (obrigatório)
+    const nameError = validateName(formData.patient_name || '');
+    if (nameError) newErrors.patient_name = nameError;
+    
+    // Validar email (opcional)
+    const emailError = validateEmail(formData.patient_email || '');
+    if (emailError) newErrors.patient_email = emailError;
+    
+    // Validar telefone (opcional)
+    const phoneError = validatePhone(formData.patient_phone || '');
+    if (phoneError) newErrors.patient_phone = phoneError;
+    
+    // Validar altura (opcional)
+    const heightError = validateHeight(formData.height || '');
+    if (heightError) newErrors.height = heightError;
+    
+    // Validar peso (opcional)
+    const weightError = validateWeight(formData.weight || '');
+    if (weightError) newErrors.weight = weightError;
+    
+    // Validar tipo sanguíneo (opcional)
+    const bloodTypeError = validateBloodType(formData.blood_type || '');
+    if (bloodTypeError) newErrors.blood_type = bloodTypeError;
+    
+    updateErrors(newErrors);
+  }, [formData.patient_name, formData.patient_email, formData.patient_phone, formData.height, formData.weight, formData.blood_type, updateErrors]);
 
   // Sincronizar estados de texto com formData quando formData mudar
   useEffect(() => {
     setAllergiesText(formData.allergies?.join(', ') || '');
     setChronicDiseasesText(formData.chronic_diseases?.join(', ') || '');
   }, [formData.allergies, formData.chronic_diseases]);
+
+  // Validar formulário quando formData for carregado
+  useEffect(() => {
+    if (formData.patient_name) {
+      console.log('🔍 [EditOverviewTab] Validando formulário inicial...');
+      validateForm();
+    }
+  }, [formData.patient_name, validateForm]);
+
+  // ✅ NOVO: Monitorar quando formData é carregado para debug
+  useEffect(() => {
+    console.log('🔍 [EditOverviewTab] FormData recebido:', {
+      patient_name: formData.patient_name,
+      patient_email: formData.patient_email,
+      patient_phone: formData.patient_phone,
+      formData_keys: Object.keys(formData)
+    });
+  }, [formData]);
 
   // Handler para processar alergias quando sair do campo
   const handleAllergiesBlur = () => {
@@ -143,6 +199,10 @@ const EditOverviewTab: React.FC<EditOverviewTabProps> = ({ formData, setFormData
   };
   return (
     <div className="space-y-6">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Visão Geral</h3>
+        <p className="text-sm text-gray-500 mt-1">Dados básicos do paciente (nome, endereço, etc.) - use "Salvar Dados do Paciente" para salvar</p>
+      </div>
       {/* Dados Pessoais */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados Pessoais</h3>
@@ -171,7 +231,7 @@ const EditOverviewTab: React.FC<EditOverviewTabProps> = ({ formData, setFormData
               value={formData.patient_email || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, patient_email: e.target.value }))}
               className={getInputClasses(!!errors.patient_email)}
-              placeholder="email@exemplo.com"
+              placeholder="Digite o email do paciente"
             />
             {errors.patient_email && (
               <p className="text-red-500 text-xs mt-1">{errors.patient_email}</p>

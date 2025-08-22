@@ -1,40 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import {
-  TrendingUp,
-  Users,
-  Calendar,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Stethoscope,
-  FileText,
-  MessageCircle,
-  Video,
-  Phone,
-  MapPin,
-  Star,
-  Activity,
-  Heart,
-  Pill,
-  Thermometer,
-  Shield,
-  Bell,
-  Plus,
-  Eye,
-  Download,
+import { 
+  Calendar, 
+  FileText, 
+  TrendingUp, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle, 
+  BarChart3, 
+  Star, 
+  Video, 
+  Plus, 
+  MessageCircle, 
+  Settings, 
+  CalendarDays, 
+  Clock3, 
+  Stethoscope, 
+  Target, 
+  Bell, 
+  Zap, 
   BookOpen,
-  Settings,
-  BarChart3,
-  UserCheck,
-  UserX,
-  CalendarDays,
-  Clock3,
-  Award,
-  Target,
-  Zap
+  UserCheck
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
 
 // Tipos
@@ -99,7 +86,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [doctorData, setDoctorData] = useState<DoctorData | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  // const [appointments] = useState<Appointment[]>([]); // Removido pois não está sendo usado
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<any>(null);
 
@@ -176,7 +163,7 @@ const Dashboard: React.FC = () => {
           }
         ];
 
-        setAppointments(mockAppointments);
+        // setAppointments(mockAppointments); // Removido pois appointments não existe mais
         setTodayAppointments(mockAppointments.filter(a => a.date === '2025-01-25'));
 
         setStats({

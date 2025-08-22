@@ -13,10 +13,8 @@ import {
   CalendarDays, 
   Table, 
   LayoutGrid, 
-  Filter, 
   Edit, 
   Trash2, 
-  Eye,
   Clock,
   User,
   Building2,
@@ -99,13 +97,13 @@ const localizer = dateFnsLocalizer({
 });
 
 // Helpers
-const msToDuration = (ms: number) => {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-  const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-  const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
-};
+// const msToDuration = (ms: number) => {
+//   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+//   const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+//   const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+//   const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+//   return `${hours}:${minutes}:${seconds}`;
+// };
 
 // Tipos TypeScript baseados no backend
 interface Doctor {
@@ -119,15 +117,15 @@ interface Doctor {
   created_at: string;
   updated_at: string;
   profile: {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
     birth_date: string;
     gender: string;
     profile_doctor: {
       id: string;
       crm_number: string;
       crm_uf: string;
-      specialty: string;
+  specialty: string;
     };
     profile_phones: Array<{
       id: string;
@@ -218,8 +216,58 @@ const mockUBSs: HealthUnit[] = [
 ];
 
 const mockDoctors: Doctor[] = [
-  { id: 'doc1', name: 'Dr. Silva', specialty: 'Clínico Geral', crm: '12345-SP', city_id: 'city1' },
-  { id: 'doc2', name: 'Dra. Maria', specialty: 'Pediatria', crm: '67890-SP', city_id: 'city2' },
+  { 
+    id: 'doc1', 
+    email: 'dr.silva@example.com',
+    cpf: '12345678901',
+    role: 'DOCTOR',
+    city_id: 'city1',
+    health_unit_id: 'ubs1',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    profile: {
+      id: 'profile1',
+      name: 'Dr. Silva',
+      birth_date: '1980-01-01',
+      gender: 'M',
+      profile_doctor: {
+        id: 'doc_profile1',
+        crm_number: '12345',
+        crm_uf: 'SP',
+        specialty: 'Clínico Geral'
+      },
+      profile_phones: [],
+      profile_emails: [],
+      profile_addresses: []
+    }
+  },
+  { 
+    id: 'doc2', 
+    email: 'dra.maria@example.com',
+    cpf: '98765432109',
+    role: 'DOCTOR',
+    city_id: 'city2',
+    health_unit_id: 'ubs2',
+    is_active: true,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    profile: {
+      id: 'profile2',
+      name: 'Dra. Maria',
+      birth_date: '1985-01-01',
+      gender: 'F',
+      profile_doctor: {
+        id: 'doc_profile2',
+        crm_number: '67890',
+        crm_uf: 'SP',
+        specialty: 'Pediatria'
+      },
+      profile_phones: [],
+      profile_emails: [],
+      profile_addresses: []
+    }
+  },
 ];
 
 const mockSchedules: MedicalSchedule[] = [
@@ -413,7 +461,7 @@ const MedicalSchedules = () => {
     // Para MASTER, sempre carregar dados
     if (isMaster) {
       console.log('🔄 [useEffect] MASTER: carregando todos os dados');
-      loadData();
+    loadData();
       return;
     }
 
@@ -730,7 +778,7 @@ const MedicalSchedules = () => {
 
   const handleDelete = async (id: string) => {
     const scheduleToDelete = schedules.find(s => s.id === id);
-    const doctorName = scheduleToDelete?.doctor?.name || 'esta escala';
+    const doctorName = scheduleToDelete?.doctor?.profile?.name || 'esta escala';
     const ubsName = scheduleToDelete?.health_unit?.name || 'UBS';
     
     const confirmed = window.confirm(
@@ -1090,15 +1138,15 @@ const MedicalSchedules = () => {
   }, [selectedUBS, selectedDoctor, selectedStatus, isMaster, userCityHallId, userHealthUnitId]);
 
   // Funções de formatação
-  const formatDateTime = (dateTime: string) => {
-    return new Date(dateTime).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // const formatDateTime = (dateTime: string) => {
+  //   return new Date(dateTime).toLocaleString('pt-BR', {
+  //     day: '2-digit',
+  //     month: '2-digit',
+  //     year: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit'
+  //   });
+  // };
 
   const formatDate = (dateTime: string) => {
     return new Date(dateTime).toLocaleDateString('pt-BR');
@@ -1334,7 +1382,7 @@ const MedicalSchedules = () => {
                 className="text-red-600 hover:text-red-900 p-2 rounded hover:bg-red-50 transform transition-all duration-200 hover:scale-110"
                 title="Excluir"
               >
-                  <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -1408,7 +1456,7 @@ const MedicalSchedules = () => {
             } 
           };
         }}
-        slotPropGetter={(date: Date) => ({
+        slotPropGetter={(_date: Date) => ({
           style: {
             backgroundColor: '#f8fafc',
             border: '1px solid #e2e8f0',
@@ -1416,7 +1464,7 @@ const MedicalSchedules = () => {
             transition: 'all 0.2s ease-in-out'
           }
         })}
-        dayPropGetter={(date: Date) => ({
+        dayPropGetter={(_date: Date) => ({
           style: {
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0'
@@ -1454,7 +1502,7 @@ const MedicalSchedules = () => {
     }
 
     // Renderização com transições suaves - SEMPRE mostra a view selecionada
-    return (
+      return (
       <div className="transform transition-all duration-500 ease-in-out">
         {view === 'calendar' && (
           <div className="animate-fade-in">
@@ -1464,12 +1512,12 @@ const MedicalSchedules = () => {
         {view === 'table' && (
           <div className="animate-fade-in">
             {filteredSchedules.length === 0 ? (
-              <div className="bg-white rounded-xl shadow p-6 min-h-[400px] flex items-center justify-center">
-                <div className="text-center">
+        <div className="bg-white rounded-xl shadow p-6 min-h-[400px] flex items-center justify-center">
+          <div className="text-center">
                   <Table className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium text-gray-600">Nenhuma escala encontrada</p>
-                  <p className="text-sm text-gray-500">Tente ajustar os filtros ou criar uma nova escala</p>
-                </div>
+            <p className="text-lg font-medium text-gray-600">Nenhuma escala encontrada</p>
+            <p className="text-sm text-gray-500">Tente ajustar os filtros ou criar uma nova escala</p>
+          </div>
               </div>
             ) : (
               renderTableView()
@@ -1491,8 +1539,8 @@ const MedicalSchedules = () => {
             )}
           </div>
         )}
-      </div>
-    );
+        </div>
+      );
   };
 
   return (
@@ -1500,14 +1548,14 @@ const MedicalSchedules = () => {
       {/* Estilos CSS personalizados */}
       <style>{customStyles}</style>
       
-      <div className="flex flex-col h-full w-full min-h-0 min-w-0 relative">
-        {/* Header visual padrão */}
-        <PageHeader
-          title="Escalas Médicas"
-          subtitle="Gestão completa das escalas dos médicos das UBSs"
-          icon={Stethoscope}
+    <div className="flex flex-col h-full w-full min-h-0 min-w-0 relative">
+      {/* Header visual padrão */}
+      <PageHeader
+        title="Escalas Médicas"
+        subtitle="Gestão completa das escalas dos médicos das UBSs"
+        icon={Stethoscope}
           className="mb-2 py-1 px-4 rounded-xl shadow bg-white border border-gray-100 animate-slide-in"
-        />
+      />
       
       {/* Header contextual da UBS selecionada */}
       {selectedUBS && (
@@ -1536,7 +1584,7 @@ const MedicalSchedules = () => {
           <span className="text-sm font-medium text-blue-800">
             Visualizando dados da sua prefeitura
           </span>
-        </div>
+      </div>
       )}
       
       {/* Indicador de dados carregados */}
@@ -1876,30 +1924,30 @@ const MedicalSchedules = () => {
             {formData.is_recurring && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tipo de Recorrência
-                    </label>
-                    <select
-                      value={formData.recurrence_type}
-                      onChange={(e) => setFormData(prev => ({ ...prev, recurrence_type: e.target.value as any }))}
+                    Tipo de Recorrência
+                  </label>
+                  <select
+                    value={formData.recurrence_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, recurrence_type: e.target.value as any }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    >
-                      <option value="none">Nenhuma</option>
-                      <option value="daily">Diário</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="monthly">Mensal</option>
-                    </select>
-                  </div>
-                  
-                  <div>
+                  >
+                    <option value="none">Nenhuma</option>
+                    <option value="daily">Diário</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                  </select>
+                </div>
+                
+                <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Data de Término da Recorrência
-                    </label>
-                    <input
-                      type="datetime-local"
-                      value={formData.recurrence_end_date || ''}
-                      onChange={(e) => setFormData(prev => ({ ...prev, recurrence_end_date: e.target.value }))}
+                    Data de Término da Recorrência
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.recurrence_end_date || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, recurrence_end_date: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
@@ -2130,7 +2178,7 @@ const MedicalSchedules = () => {
         details={errorModal.details}
         size="lg"
       />
-      </div>
+    </div>
     </>
   );
 };

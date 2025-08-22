@@ -7,11 +7,15 @@ import { useAuthStore } from '../../../store/authStore';
 interface EditExamsTabProps {
   formData: Partial<MedicalRecord>;
   setFormData: React.Dispatch<React.SetStateAction<Partial<MedicalRecord>>>;
+  onValidationChange?: (isValid: boolean) => void;
 }
 
 const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) => {
-  const { token } = useAuthStore();
-  const [exams, setExams] = useState<Exam[]>([]);
+  const { token, user } = useAuthStore();
+  
+  // ✅ CORRIGIDO: Usar formData.exams diretamente em vez de estado local
+  const exams = formData.exams || [];
+  
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [newExam, setNewExam] = useState<Partial<Exam>>({
     id: '',
@@ -20,7 +24,7 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
     type: '',
     lab: '',
     results: '',
-    doctor_name: '',
+    doctor_name: user?.profile?.name || 'Médico', // ✅ Preenchido automaticamente
     file_url: '',
     status: 'completed'
   });
@@ -31,22 +35,22 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
   const [currentStep, setCurrentStep] = useState(0);
 
   // Função para obter headers com token de autenticação
-  const getAuthHeaders = () => {
-    const currentToken = token || localStorage.getItem('token');
-    console.log('[EditExamsTab] Token disponível:', currentToken ? 'SIM' : 'NÃO');
-    return {
-      'Content-Type': 'application/json',
-      ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
-    };
-  };
+  // const getAuthHeaders = () => {
+  //   const currentToken = token || localStorage.getItem('token');
+  //   console.log('[EditExamsTab] Token disponível:', currentToken ? 'SIM' : 'NÃO');
+  //   return {
+  //     'Content-Type': 'application/json',
+  //     ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
+  //   };
+  // }; // Removido pois não está sendo usado
 
   // Função para obter headers para upload de arquivos
-  const getAuthHeadersForUpload = () => {
-    const currentToken = token || localStorage.getItem('token');
-    return {
-      ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
-    };
-  };
+  // const getAuthHeadersForUpload = () => {
+  //   const currentToken = token || localStorage.getItem('token');
+  //   return {
+  //     ...(currentToken && { 'Authorization': `Bearer ${currentToken}` })
+  //   };
+  // }; // Removido pois não está sendo usado
   const steps = ['Informações Básicas', 'Resultados', 'Anexos', 'Revisão'];
 
   // Fetch exams when component mounts or formData.id changes
@@ -56,13 +60,21 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
     }
   }, [formData?.id]);
 
+  // ✅ Atualizar doctor_name quando o usuário mudar
+  useEffect(() => {
+    if (user?.profile?.name) {
+      setNewExam(prev => ({
+        ...prev,
+        doctor_name: user.profile.name
+      }));
+    }
+  }, [user?.profile?.name]);
+
   const fetchExams = async (medicalRecordId: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/medical-records/${medicalRecordId}/exams`);
-      setExams(response.data);
-      // Update formData to keep it in sync
+      const response = await axios.get(`/medical-records/${medicalRecordId}/exams`);
       setFormData(prev => ({
         ...prev,
         exams: response.data
@@ -72,24 +84,104 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
       setError('Erro ao carregar exames');
       // Fallback to existing data if available
       if (formData.exams) {
-        setExams(formData.exams);
+        setFormData(prev => ({
+          ...prev,
+          exams: formData.exams
+        }));
       }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ IMPLEMENTADO: Upload de arquivos usando Base64
   const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await axios.post('/api/medical-records/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    try {
+      // Validação de tamanho no frontend (10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB em bytes
+      if (file.size > maxSize) {
+        throw new Error(`Arquivo muito grande. Tamanho máximo permitido: 10MB. Seu arquivo: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      }
+
+      // Validação de tipo de arquivo
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(`Tipo de arquivo não permitido: ${file.type}. Tipos aceitos: PDF, JPEG, PNG, GIF, DOC, DOCX, TXT`);
+      }
+
+      // Converter arquivo para Base64
+      const base64Data = await convertFileToBase64(file);
+      
+      const uploadData = {
+        medical_record_id: formData.id,
+        original_name: file.name,
+        file_data: base64Data, // Base64 string
+        file_size: file.size,
+        mime_type: file.type,
+        description: `Exame: ${newExam.name}`
+      };
+      
+      const response = await axios.post('/medical-records/upload', uploadData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Retorna o ID do arquivo salvo para referência
+      return response.data.id;
+    } catch (error: any) {
+      console.error('[EditExamsTab] Erro no upload:', error);
+      
+      // Tratamento específico para erros de validação
+      if (error.message.includes('Arquivo muito grande') || error.message.includes('Tipo de arquivo não permitido')) {
+        throw error; // Re-throw para mostrar a mensagem específica
+      }
+      
+      // Tratamento para outros erros
+      if (error.response?.status === 413) {
+        throw new Error('Arquivo muito grande para o servidor processar. Tente um arquivo menor.');
+      }
+      
+      throw new Error('Falha no upload do arquivo');
+    }
+  };
+
+  // Função auxiliar para converter arquivo para Base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Falha na conversão para Base64'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Erro na leitura do arquivo'));
+      reader.readAsDataURL(file);
     });
+  };
+
+  // Função para converter data para formato ISO (como nas outras tabs)
+  const convertToISO = (dateString: string): string => {
+    if (!dateString) return new Date().toISOString();
     
-    return response.data.file_url;
+    // Se já estiver no formato ISO, retorna como está
+    if (dateString.includes('T')) return dateString;
+    
+    // Converte YYYY-MM-DD para ISO
+    const date = new Date(dateString + 'T00:00:00.000Z');
+    return date.toISOString();
   };
 
   const handleAddExam = async () => {
@@ -108,16 +200,23 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
       const examData = {
         ...newExam,
         medical_record_id: formData.id,
+        date: convertToISO(newExam.date || ''), // Convertendo para ISO
+        doctor_id: user?.id || '', // Adicionando doctor_id
         file_url: fileUrl
       };
       
-      const response = await axios.post('/api/medical-records/exams', examData);
+      // ✅ DEBUG: Verificar se doctor_id está sendo enviado
+      console.log('[EditExamsTab] Dados do exame sendo enviados:', {
+        ...examData,
+        doctor_id: examData.doctor_id,
+        user_id: user?.id,
+        user_name: user?.profile?.name
+      });
+      
+      const response = await axios.post('/medical-records/exams', examData);
       const newExamFromAPI = response.data;
       
       // Update local state
-      setExams(prev => [...prev, newExamFromAPI]);
-      
-      // Update formData to keep it in sync
       setFormData(prev => ({
         ...prev,
         exams: [...(prev.exams || []), newExamFromAPI]
@@ -139,9 +238,15 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
       setSelectedFile(null);
       setCurrentStep(0);
       setIsAdding(false);
-    } catch (err: any) {
-      console.error('Error adding exam:', err);
-      setError('Erro ao adicionar exame');
+    } catch (error: any) {
+      console.error('Error adding exam:', error);
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Erro ao adicionar exame. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -153,37 +258,24 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
     setIsLoading(true);
     setError(null);
     try {
-      let fileUrl = editingExam.file_url;
-      
-      // Upload file if selected
-      if (selectedFile) {
-        fileUrl = await uploadFile(selectedFile);
-      }
-      
       const examData = {
         ...editingExam,
-        file_url: fileUrl
+        date: convertToISO(editingExam.date), // Convertendo para ISO
+        doctor_id: user?.id || '' // Adicionando doctor_id
       };
       
-      const response = await axios.put(`/api/medical-records/exams/${editingExam.id}`, examData);
+      const response = await axios.put(`/medical-records/exams/${editingExam.id}`, examData);
       const updatedExam = response.data;
       
-      // Update local state
-      setExams(prev => prev.map(e => 
-        e.id === editingExam.id ? updatedExam : e
-      ));
-      
-      // Update formData to keep it in sync
+      // ✅ CORRIGIDO: Atualizar formData diretamente
       setFormData(prev => ({
         ...prev,
-        exams: prev.exams?.map(e => 
+        exams: (prev.exams || []).map(e => 
           e.id === editingExam.id ? updatedExam : e
         )
       }));
       
       setEditingExam(null);
-      setSelectedFile(null);
-      setCurrentStep(0);
     } catch (err: any) {
       console.error('Error updating exam:', err);
       setError('Erro ao atualizar exame');
@@ -198,12 +290,9 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
     setIsLoading(true);
     setError(null);
     try {
-      await axios.delete(`/api/medical-records/exams/${id}`);
+              await axios.delete(`/medical-records/exams/${id}`);
       
       // Update local state
-      setExams(prev => prev.filter(e => e.id !== id));
-      
-      // Update formData to keep it in sync
       setFormData(prev => ({
         ...prev,
         exams: prev.exams?.filter(e => e.id !== id)
@@ -237,19 +326,46 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validação imediata do arquivo
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+
+      if (file.size > maxSize) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        setError(`Arquivo muito grande: ${sizeMB}MB. Tamanho máximo: 10MB`);
+        e.target.value = ''; // Limpa o input
+        return;
+      }
+
+      if (!allowedTypes.includes(file.type)) {
+        setError(`Tipo de arquivo não permitido: ${file.type}`);
+        e.target.value = ''; // Limpa o input
+        return;
+      }
+
+      // Arquivo válido
       setSelectedFile(file);
+      setError(null); // Limpa erros anteriores
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    if (editingExam) {
-      setEditingExam(prev => ({ ...prev, [name]: value }));
-    } else {
-      setNewExam(prev => ({ ...prev, [name]: value }));
-    }
-  };
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  //   const { name, value } = e.target;
+  //   
+  //   if (editingExam) {
+  //     setEditingExam(prev => ({ ...prev, [name]: value }));
+  //   } else {
+  //     setNewExam(prev => ({ ...prev, [name]: value }));
+  //   }
+  // };
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -348,14 +464,15 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Médico Responsável
+                <span className="ml-1 text-xs text-blue-600">(Preenchido automaticamente)</span>
               </label>
               <input
                 type="text"
                 name="doctor_name"
                 value={exam.doctor_name || ''}
-                onChange={handleChange}
-                placeholder="Nome do médico"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                readOnly // ✅ Campo somente leitura
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
+                title="Nome do médico preenchido automaticamente"
               />
             </div>
           </div>
@@ -419,6 +536,9 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     PDF, JPG, PNG, DOC até 10MB
+                  </p>
+                  <p className="text-xs text-red-500 mt-1 font-medium">
+                    ⚠️ Arquivos muito grandes podem causar lentidão
                   </p>
                 </label>
               </div>
@@ -616,15 +736,16 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">Exames</h3>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Exames</h3>
+          <p className="text-sm text-gray-500 mt-1">Exames salvam automaticamente quando você clica em "Adicionar Exame"</p>
+        </div>
         {!isAdding && !editingExam && (
           <button
-            onClick={() => {
-              setCurrentStep(0);
-              setSelectedFile(null);
-              setIsAdding(true);
-            }}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            onClick={() => setIsAdding(true)}
+            disabled={isLoading}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Adiciona e salva o exame imediatamente no banco de dados"
           >
             <Plus className="w-4 h-4 mr-1" />
             Novo Exame
@@ -703,7 +824,10 @@ const EditExamsTab: React.FC<EditExamsTabProps> = ({ formData, setFormData }) =>
                       onClick={() => {
                         setCurrentStep(0);
                         setSelectedFile(null);
-                        setEditingExam(exam);
+                        setEditingExam({
+                          ...exam,
+                          doctor_name: user?.profile?.name || exam.doctor_name || 'Médico' // ✅ Sempre usar o médico logado
+                        });
                       }}
                       disabled={isLoading}
                       className="p-1 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

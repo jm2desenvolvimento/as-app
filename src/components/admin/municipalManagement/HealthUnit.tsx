@@ -32,9 +32,9 @@ const HealthUnit = () => {
   const [cidade, setCidade] = useState('');
   const [status, setStatus] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'table' | 'map'>('table');
-  const [density, setDensity] = useState<'normal'>('normal');
+  const [density] = useState<'normal' | 'compact' | 'comfortable'>('normal');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10);
   const [sortField, setSortField] = useState<SortableField>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,7 +51,7 @@ const HealthUnit = () => {
     city_hall_id: '',
   });
   const [cityHalls, setCityHalls] = useState([]);
-  const [errors, setErrors] = useState<any>({});
+  // const [errors, setErrors] = useState<any>({}); // Removido pois não está sendo usado
 
   // Buscar prefeituras para o select
   useEffect(() => {
@@ -131,7 +131,7 @@ const HealthUnit = () => {
     }
     // Filtro status (mock: todos ativos)
     if (status) {
-      result = result.filter(u => status === 'ativo'); // todos ativos no mock
+      result = result.filter(() => status === 'ativo'); // todos ativos no mock
     }
     // Ordenação
     result.sort((a, b) => {
@@ -166,7 +166,7 @@ const HealthUnit = () => {
       });
     }
     if (cidade) result = result.filter(u => u.city.toLowerCase().includes(cidade.toLowerCase()));
-    if (status) result = result.filter(u => status === 'ativo');
+    if (status) result = result.filter(() => status === 'ativo');
     return result.length;
   })();
 

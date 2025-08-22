@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronUp, LogOut } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
+import { useAuthStore } from '../../store/authStore';
 
 export interface SidebarItem {
   label: string;
@@ -23,6 +24,7 @@ export default function Sidebar({ items, collapsed }: SidebarProps) {
   const location = useLocation();
   const [expandedDropdowns, setExpandedDropdowns] = useState<string[]>([]);
   const { hasAnyPermission, hasRole, user } = usePermission();
+  const { logout } = useAuthStore();
   const currentPath = location.pathname;
 
   // Log para debug
@@ -213,8 +215,8 @@ export default function Sidebar({ items, collapsed }: SidebarProps) {
         <div
           className="flex items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-red-500/20"
           onClick={() => {
-            localStorage.removeItem('token');
             navigate('/');
+            logout();
           }}
           title={collapsed ? 'Sair' : ''}
         >

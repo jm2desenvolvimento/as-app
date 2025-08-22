@@ -19,7 +19,7 @@ export function ProtectedByPermission({
   fallback = null,
   role
 }: ProtectedByPermissionProps) {
-  const { hasPermission, hasAllPermissions, hasAnyPermission, hasRole } = usePermission();
+  const { hasAllPermissions, hasAnyPermission, hasRole } = usePermission();
 
   // Verificar role se especificado
   if (role && !hasRole(role)) {

@@ -7,7 +7,7 @@ interface LayoutHeaderProps {
   onToggleSidebar?: () => void;
 }
 
-export default function LayoutHeader({ sidebarCollapsed, onToggleSidebar }: LayoutHeaderProps) {
+export default function LayoutHeader({ sidebarCollapsed }: LayoutHeaderProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -66,8 +66,8 @@ export default function LayoutHeader({ sidebarCollapsed, onToggleSidebar }: Layo
               <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-blue-700 font-medium transition">Meu Perfil</button>
               <button
                 onClick={() => {
-                  logout();
                   navigate('/');
+                  logout();
                 }}
                 className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 text-red-600 font-medium transition"
               >

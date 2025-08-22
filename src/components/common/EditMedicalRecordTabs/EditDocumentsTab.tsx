@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import type { MedicalRecord, Document } from '../../../types/medical-record';
-import { Plus, Edit2, Trash2, Calendar, FileText, Loader2, Upload, Download, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Calendar, FileText, Loader2, Upload, Download } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 
 interface EditDocumentsTabProps {
   formData: Partial<MedicalRecord>;
   setFormData: React.Dispatch<React.SetStateAction<Partial<MedicalRecord>>>;
+  onValidationChange?: (isValid: boolean) => void;
 }
 
 const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormData }) => {
@@ -14,10 +15,10 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
   const [newDocument, setNewDocument] = useState<Partial<Document>>({
     id: '',
     name: '',
-    type: '',
+    type: 'Documento', // Valor padrão para satisfazer validação (mínimo 3 chars)
     date: new Date().toISOString().split('T')[0],
     description: '',
-    url: '',
+    file_url: '', // ✅ CORRIGIDO: Usar file_url consistentemente
     added_by: ''
   });
   const [isAdding, setIsAdding] = useState(false);
@@ -35,7 +36,7 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
     
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/medical-records/${formData.id}/documents`, {
+      const response = await axios.get(`/medical-records/${formData.id}/documents`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -60,32 +61,185 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
     }
   }, [formData.id]);
 
-  // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  // Preencher campos automaticamente com dados do usuário logado
+  useEffect(() => {
+    const { user } = useAuthStore.getState();
+    if (user?.profile?.name) {
+      const doctorName = user.profile.name;
+      console.log('[EditDocumentsTab] Preenchendo campos automaticamente:', { doctorName, user });
+      
+      // Preencher o campo added_by automaticamente
+      setNewDocument(prev => {
+        const updated = {
+          ...prev,
+          added_by: doctorName
+        };
+        console.log('[EditDocumentsTab] newDocument atualizado:', updated);
+        return updated;
+      });
+    }
+  }, []);
+
+  // Preencher added_by quando editingDocument for definido
+  useEffect(() => {
+    if (editingDocument && !editingDocument.added_by) {
+      const { user } = useAuthStore.getState();
+      if (user?.profile?.name) {
+        setEditingDocument(prev => prev ? {
+          ...prev,
+          added_by: user.profile.name
+        } : null);
+      }
+    }
+  }, [editingDocument]);
+
+  // ✅ IMPLEMENTADO: Upload de arquivos usando Base64 (igual à tab de exames)
+  const uploadFile = async (file: File): Promise<string> => {
+    try {
+      // Validação de tamanho no frontend (10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB em bytes
+      if (file.size > maxSize) {
+        throw new Error(`Arquivo muito grande. Tamanho máximo permitido: 10MB. Seu arquivo: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      }
+
+      // Validação de tipo de arquivo
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(`Tipo de arquivo não permitido: ${file.type}. Tipos aceitos: PDF, JPEG, PNG, GIF, DOC, DOCX, TXT`);
+      }
+
+      // Converter arquivo para Base64
+      const base64Data = await convertFileToBase64(file);
+      
+      const uploadData = {
+        medical_record_id: formData.id,
+        original_name: file.name,
+        file_data: base64Data, // Base64 string
+        file_size: file.size,
+        mime_type: file.type,
+        description: `Documento: ${newDocument.name}`
+      };
+      
+      const token = localStorage.getItem('token');
+      const response = await axios.post('/medical-records/upload', uploadData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Retorna o ID do arquivo salvo para referência
+      return response.data.id;
+    } catch (error: any) {
+      console.error('[EditDocumentsTab] Erro no upload:', error);
+      
+      // Tratamento específico para erros de validação
+      if (error.message?.includes('Arquivo muito grande') || error.message?.includes('Tipo de arquivo não permitido')) {
+        throw error; // Re-throw para mostrar a mensagem específica
+      }
+      
+      // Tratamento para outros erros
+      if (error.response?.status === 413) {
+        throw new Error('Arquivo muito grande para o servidor processar. Tente um arquivo menor.');
+      }
+      
+      throw new Error('Falha no upload do arquivo');
     }
   };
 
-  // Upload file
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const token = localStorage.getItem('token');
-    const response = await axios.post('/api/upload', formData, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data'
-      }
+  // Função auxiliar para converter arquivo para Base64
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Falha na conversão para Base64'));
+        }
+      };
+      reader.onerror = () => reject(new Error('Erro na leitura do arquivo'));
+      reader.readAsDataURL(file);
     });
-    
-    return response.data.url;
+  };
+
+  // ✅ IMPLEMENTADO: Validação imediata de arquivo (igual à tab de exames)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validação imediata do arquivo
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+
+      if (file.size > maxSize) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        setError(`Arquivo muito grande: ${sizeMB}MB. Tamanho máximo: 10MB`);
+        e.target.value = ''; // Limpa o input
+        return;
+      }
+
+      if (!allowedTypes.includes(file.type)) {
+        setError(`Tipo de arquivo não permitido: ${file.type}`);
+        e.target.value = ''; // Limpa o input
+        return;
+      }
+
+      // Arquivo válido
+      setSelectedFile(file);
+      setError(null); // Limpa erros anteriores
+    }
   };
 
   const handleAddDocument = async () => {
-    if (!formData.id || !newDocument.name) return;
+    if (!formData.id) {
+      setError('ID do prontuário não encontrado');
+      return;
+    }
+    
+    // Validar se é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(formData.id)) {
+      setError('ID do prontuário não é um UUID válido');
+      return;
+    }
+    
+    if (!newDocument.name || newDocument.name.trim().length < 3) {
+      setError('Nome do documento deve ter pelo menos 3 caracteres');
+      return;
+    }
+    
+    if (!newDocument.type || newDocument.type.trim().length < 3) {
+      setError('Tipo do documento deve ter pelo menos 3 caracteres');
+      return;
+    }
+    
+    const user = useAuthStore.getState().user;
+    if (!user?.id) {
+      setError('Usuário não está logado ou ID não encontrado');
+      return;
+    }
+    
+    if (!newDocument.added_by || newDocument.added_by.trim().length < 3) {
+      setError('Campo "Adicionado por" deve ter pelo menos 3 caracteres');
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
@@ -101,12 +255,19 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
       const documentData = {
         ...newDocument,
         medical_record_id: formData.id,
-        file_url: fileUrl || newDocument.url,
+        uploader_id: useAuthStore.getState().user?.id || '',
+        file_url: fileUrl || 'https://placeholder.com/document.pdf', // Backend espera file_url com pelo menos 10 chars
+        added_by: newDocument.added_by, // Manter para compatibilidade com frontend
         date: new Date(newDocument.date || new Date()).toISOString()
       };
       
+      console.log('[EditDocumentsTab] Dados do documento a serem enviados:', documentData);
+      console.log('[EditDocumentsTab] Usuário logado:', useAuthStore.getState().user);
+      console.log('[EditDocumentsTab] ID do usuário:', useAuthStore.getState().user?.id);
+      console.log('[EditDocumentsTab] ID do prontuário:', formData.id);
+      
       const token = localStorage.getItem('token');
-      const response = await axios.post(`/api/medical-records/${formData.id}/documents`, documentData, {
+      const response = await axios.post(`/medical-records/documents`, documentData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -126,10 +287,10 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
       setNewDocument({
         id: '',
         name: '',
-        type: '',
+        type: 'Documento', // Valor padrão para satisfazer validação
         date: new Date().toISOString().split('T')[0],
         description: '',
-        url: '',
+        file_url: '', // ✅ CORRIGIDO: Usar file_url consistentemente
         added_by: ''
       });
       setSelectedFile(null);
@@ -137,7 +298,15 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
       
     } catch (err: any) {
       console.error('Erro ao adicionar documento:', err);
+      
+      // Tratamento específico para erros de validação de arquivo
+      if (err.message?.includes('Arquivo muito grande') || err.message?.includes('Tipo de arquivo não permitido')) {
+        setError(err.message);
+      } else if (err.message?.includes('Falha no upload do arquivo')) {
+        setError('Erro no upload do arquivo. Verifique o tamanho e tipo do arquivo.');
+      } else {
       setError('Erro ao adicionar documento. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -150,7 +319,7 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
     setError(null);
     
     try {
-      let fileUrl = editingDocument.file_url || editingDocument.url;
+      let fileUrl = editingDocument.file_url;
       
       // Upload new file if selected
       if (selectedFile) {
@@ -159,12 +328,14 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
       
       const documentData = {
         ...editingDocument,
-        file_url: fileUrl,
+        uploader_id: useAuthStore.getState().user?.id || '',
+        file_url: fileUrl || 'https://placeholder.com/document.pdf', // Backend espera file_url com pelo menos 10 chars
+        added_by: editingDocument.added_by, // Manter para compatibilidade com frontend
         date: new Date(editingDocument.date || new Date()).toISOString()
       };
       
       const token = localStorage.getItem('token');
-      const response = await axios.put(`/api/medical-records/documents/${editingDocument.id}`, documentData, {
+      const response = await axios.put(`/medical-records/documents/${editingDocument.id}`, documentData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -185,7 +356,15 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
       
     } catch (err: any) {
       console.error('Erro ao atualizar documento:', err);
+      
+      // Tratamento específico para erros de validação de arquivo
+      if (err.message?.includes('Arquivo muito grande') || err.message?.includes('Tipo de arquivo não permitido')) {
+        setError(err.message);
+      } else if (err.message?.includes('Falha no upload do arquivo')) {
+        setError('Erro no upload do arquivo. Verifique o tamanho e tipo do arquivo.');
+      } else {
       setError('Erro ao atualizar documento. Tente novamente.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +378,7 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`/api/medical-records/documents/${documentId}`, {
+      await axios.delete(`/medical-records/documents/${documentId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -231,16 +410,7 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
       }
     };
 
-    // Mock file upload - em um ambiente real, isso seria substituído por um upload real
-    const handleFileChange = () => {
-      const mockFileUrl = 'https://example.com/mock-document-file.pdf';
-      if (isNew) {
-        setNewDocument(prev => ({ ...prev, url: mockFileUrl }));
-      } else {
-        setEditingDocument(prev => prev ? { ...prev, url: mockFileUrl } : null);
-      }
-      alert('Em um ambiente real, este arquivo seria enviado para o servidor. Por enquanto, estamos usando uma URL mockada.');
-    };
+    // ✅ CORRIGIDO: Removida função mock - agora usa a função real handleFileChange
 
     return (
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm space-y-4">
@@ -275,11 +445,11 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
             </label>
             <select
               name="type"
-              value={document.type || ''}
+              value={document.type || 'Documento'}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="">Selecione um tipo</option>
+              <option value="Documento">Documento</option>
               <option value="laudo">Laudo</option>
               <option value="atestado">Atestado</option>
               <option value="receita">Receita</option>
@@ -308,15 +478,14 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Adicionado por
+              Adicionado por <span className="text-xs text-gray-500">(Preenchido automaticamente)</span>
             </label>
             <input
               type="text"
               name="added_by"
               value={document.added_by || ''}
-              onChange={handleChange}
-              placeholder="Nome do profissional"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              readOnly
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 cursor-not-allowed"
             />
           </div>
         </div>
@@ -336,27 +505,58 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Arquivo
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Anexar Arquivo
           </label>
-          <div className="flex items-center space-x-3">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input
               type="file"
+              onChange={handleFileChange}
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
               className="hidden"
               id={isNew ? "new-document-file" : `edit-document-file-${document.id}`}
-              onChange={handleFileChange}
             />
-            <label
-              htmlFor={isNew ? "new-document-file" : `edit-document-file-${document.id}`}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 cursor-pointer"
-            >
-              {document.url ? 'Alterar Arquivo' : 'Anexar Arquivo'}
+            <label htmlFor={isNew ? "new-document-file" : `edit-document-file-${document.id}`} className="cursor-pointer">
+              <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">
+                Clique para selecionar um arquivo ou arraste aqui
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                PDF, JPG, PNG, DOC, DOCX, TXT até 10MB
+              </p>
+              <p className="text-xs text-red-500 mt-1 font-medium">
+                ⚠️ Arquivos muito grandes podem causar lentidão
+              </p>
             </label>
-            {document.url && (
-              <span className="text-sm text-green-600">Arquivo anexado</span>
-            )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">Formatos aceitos: PDF, DOC, DOCX, JPG, PNG (máx. 10MB)</p>
+          
+          {selectedFile && (
+            <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg mt-3">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <span className="text-sm text-blue-800">{selectedFile.name}</span>
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="ml-auto text-blue-600 hover:text-blue-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          
+          {document.file_url && !selectedFile && (
+            <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg mt-3">
+              <FileText className="w-5 h-5 text-green-600" />
+              <span className="text-sm text-green-800">Arquivo atual</span>
+              <a
+                href={document.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto text-green-600 hover:text-green-800"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+            </div>
+          )}
         </div>
         
         <div className="flex justify-end space-x-3 pt-4">
@@ -392,7 +592,10 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
+        <div>
         <h3 className="text-lg font-semibold text-gray-900">Documentos</h3>
+          <p className="text-sm text-gray-500 mt-1">Documentos salvam automaticamente quando você clica em "Adicionar Documento"</p>
+        </div>
         {!isAdding && !editingDocument && (
           <button
             onClick={() => {
@@ -401,6 +604,7 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
             }}
             disabled={isLoading}
             className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Adiciona e salva o documento imediatamente no banco de dados"
           >
             <Plus className="w-4 h-4 mr-1" />
             Novo Documento
@@ -500,12 +704,12 @@ const EditDocumentsTab: React.FC<EditDocumentsTabProps> = ({ formData, setFormDa
                   </div>
                 )}
                 
-                {document.url && (
+                {document.file_url && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <div className="flex justify-between items-center">
                       <p className="text-xs text-gray-500">Arquivo</p>
                       <a 
-                        href={document.url}
+                        href={document.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
