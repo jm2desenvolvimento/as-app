@@ -11,7 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      'rrule': './node_modules/rrule/dist/esm/index.js'
+      'rrule': 'rrule/dist/esm/index.js'
     }
   }
 })
