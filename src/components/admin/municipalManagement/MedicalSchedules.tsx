@@ -1046,7 +1046,7 @@ const MedicalSchedules = () => {
 
       if (schedule.rrule && calendarRange) {
         try {
-          const rule = rrulestr(schedule.rrule, { forceset: false });
+          const rule = rrulestr(schedule.rrule);
           const between = (rule as any).between(calendarRange.start, calendarRange.end, true) as Date[];
           const exdates: string[] = Array.isArray((schedule as any).exdates) ? (schedule as any).exdates : [];
           for (const dt of between) {
