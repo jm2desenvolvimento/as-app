@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../config/axios';
 import { 
   Calendar, 
   Clock, 
@@ -23,16 +24,52 @@ import {
 } from 'lucide-react';
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
 
-// Tipos
-interface Schedule {
+// Tipos atualizados para a API
+interface MedicalSchedule {
   id: string;
-  ubs_name: string;
-  ubs_address: string;
-  days: string[];
-  start_time: string;
-  end_time: string;
-  room: string;
-  specialty: string;
+  doctor_id: string;
+  health_unit_id: string;
+  start_datetime: string;
+  end_datetime: string;
+  status: 'pending' | 'confirmed' | 'temporary' | 'cancelled';
+  total_slots: number;
+  available_slots: number;
+  is_recurring: boolean;
+  recurrence_type?: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurrence_end_date?: string;
+  recurrence_weekdays?: string;
+  substitute_doctor_id?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  doctor: {
+    id: string;
+    profile: {
+      id: string;
+      name: string;
+      profile_doctor?: {
+        crm_number: string;
+        crm_uf: string;
+      };
+    };
+  };
+  health_unit: {
+    id: string;
+    name: string;
+    address: string;
+    phone?: string;
+  };
+  substitute_doctor?: {
+    id: string;
+    profile: {
+      id: string;
+      name: string;
+      profile_doctor?: {
+        crm_number: string;
+        crm_uf: string;
+      };
+    };
+  };
 }
 
 interface Appointment {
@@ -65,7 +102,7 @@ const Schedule: React.FC = () => {
   // Estados
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [schedules, setSchedules] = useState<MedicalSchedule[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [filters, setFilters] = useState<FilterOptions>({
@@ -78,50 +115,30 @@ const Schedule: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  // Carregar dados
+  // Garantir que schedules seja sempre um array
+  const safeSchedules = Array.isArray(schedules) ? schedules : [];
+
+  // Carregar dados da API
   useEffect(() => {
     const fetchScheduleData = async () => {
       try {
         setLoading(true);
         
-        // Simular delay de carregamento
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Escalas mockadas
-        const mockSchedules: Schedule[] = [
-          {
-            id: '1',
-            ubs_name: 'UBS Vila Nova',
-            ubs_address: 'Rua das Flores, 123 - Vila Nova',
-            days: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'],
-            start_time: '08:00',
-            end_time: '17:00',
-            room: 'Sala 2',
-            specialty: 'Clínico Geral'
-          },
-          {
-            id: '2',
-            ubs_name: 'UBS Centro',
-            ubs_address: 'Av. Principal, 456 - Centro',
-            days: ['Terça', 'Quinta'],
-            start_time: '14:00',
-            end_time: '18:00',
-            room: 'Sala 1',
-            specialty: 'Clínico Geral'
-          },
-          {
-            id: '3',
-            ubs_name: 'UBS Jardim São Paulo',
-            ubs_address: 'Rua das Palmeiras, 789 - Jardim São Paulo',
-            days: ['Segunda', 'Quarta'],
-            start_time: '13:00',
-            end_time: '17:00',
-            room: 'Sala 3',
-            specialty: 'Clínico Geral'
-          }
-        ];
+                 // Buscar escalas médicas da API
+        console.log('🔍 [SCHEDULE] Fazendo requisição para /medical-schedules/my-schedules');
+        const response = await api.get('/medical-schedules/my-schedules');
+        console.log('🔍 [SCHEDULE] Resposta da API:', response.data);
+        console.log('🔍 [SCHEDULE] Tipo da resposta:', typeof response.data);
+        console.log('🔍 [SCHEDULE] É array?', Array.isArray(response.data));
 
-        // Agendamentos mockados
+        if (response.data && Array.isArray(response.data)) {
+          setSchedules(response.data);
+        } else {
+          console.log('🔍 [SCHEDULE] Resposta não é array, definindo array vazio');
+          setSchedules([]);
+        }
+        
+        // Por enquanto, manter agendamentos mockados até implementar a API de agendamentos
         const mockAppointments: Appointment[] = [
           {
             id: '1',
@@ -220,13 +237,12 @@ const Schedule: React.FC = () => {
           }
         ];
 
-        setSchedules(mockSchedules);
         setAppointments(mockAppointments);
         setFilteredAppointments(mockAppointments);
         
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao carregar dados:', err);
-        setError('Erro ao carregar dados da agenda');
+        setError(err.response?.data?.message || 'Erro ao carregar dados da agenda');
       } finally {
         setLoading(false);
       }
@@ -401,10 +417,17 @@ const Schedule: React.FC = () => {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Calendar className="text-blue-600" size={36} />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Agenda do Médico</h1>
-            <p className="text-gray-500 text-base">Dr. João Silva - Clínico Geral</p>
-          </div>
+                      <div>
+              <h1 className="text-3xl font-bold text-gray-900">Agenda do Médico</h1>
+              <p className="text-gray-500 text-base">
+                {safeSchedules.length > 0 && safeSchedules[0]?.doctor?.profile?.name 
+                  ? `Dr. ${safeSchedules[0].doctor.profile.name}` 
+                  : 'Carregando...'}
+                {safeSchedules.length > 0 && safeSchedules[0]?.doctor?.profile?.profile_doctor?.crm_number 
+                  ? ` - CRM ${safeSchedules[0].doctor.profile.profile_doctor.crm_number}/${safeSchedules[0].doctor.profile.profile_doctor.crm_uf}` 
+                  : ''}
+              </p>
+            </div>
         </div>
         <button
           onClick={() => navigate('/doctor/appointments/new')}
@@ -440,9 +463,11 @@ const Schedule: React.FC = () => {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">Todas as UBS</option>
-            <option value="UBS Vila Nova">UBS Vila Nova</option>
-            <option value="UBS Centro">UBS Centro</option>
-            <option value="UBS Jardim São Paulo">UBS Jardim São Paulo</option>
+            {safeSchedules.map((schedule) => (
+              <option key={schedule.health_unit?.id || schedule.id} value={schedule.health_unit?.name || 'UBS não informada'}>
+                {schedule.health_unit?.name || 'UBS não informada'}
+              </option>
+            ))}
           </select>
 
           <select
@@ -495,33 +520,57 @@ const Schedule: React.FC = () => {
               <Building2 className="w-5 h-5 text-blue-600" />
               <h2 className="text-lg font-semibold text-gray-800">Minhas Escalas</h2>
             </div>
-            <div className="space-y-4">
-              {schedules.map((schedule) => (
-                <div key={schedule.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">{schedule.ubs_name}</h3>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                      {schedule.specialty}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{schedule.ubs_address}</p>
+                        <div className="space-y-4">
+              {safeSchedules.length === 0 ? (
+                <div className="text-center py-8">
+                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500">Nenhuma escala encontrada</p>
+                  <p className="text-sm text-gray-400">Suas escalas médicas aparecerão aqui</p>
+                </div>
+              ) : (
+                safeSchedules.map((schedule) => (
+              <div key={schedule.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-gray-900">{schedule.health_unit?.name || 'UBS não informada'}</h3>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {schedule.doctor?.profile?.profile_doctor?.crm_number 
+                      ? `CRM ${schedule.doctor.profile.profile_doctor.crm_number}/${schedule.doctor.profile.profile_doctor.crm_uf}`
+                      : 'Médico'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{schedule.health_unit?.address || 'Endereço não informado'}</p>
                   <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
                     <Clock className="w-4 h-4" />
-                    <span>{schedule.start_time} - {schedule.end_time}</span>
+                    <span>{new Date(schedule.start_datetime).toLocaleTimeString('pt-BR', { hour: 'numeric', minute: 'numeric' })} - {new Date(schedule.end_datetime).toLocaleTimeString('pt-BR', { hour: 'numeric', minute: 'numeric' })}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
                     <MapPin className="w-4 h-4" />
-                    <span>{schedule.room}</span>
+                    <span>{schedule.health_unit?.address || 'Endereço não informado'}</span>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {schedule.days.map((day, index) => (
-                      <span key={index} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                        {day}
+                                    <div className="flex flex-wrap gap-1">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {new Date(schedule.start_datetime).toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                    {schedule.is_recurring && (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        Recorrente
                       </span>
-                    ))}
+                    )}
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      schedule.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      schedule.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      schedule.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {schedule.status === 'confirmed' ? 'Confirmada' :
+                       schedule.status === 'pending' ? 'Pendente' :
+                       schedule.status === 'cancelled' ? 'Cancelada' :
+                       schedule.status === 'temporary' ? 'Temporária' : schedule.status}
+                    </span>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         </div>
