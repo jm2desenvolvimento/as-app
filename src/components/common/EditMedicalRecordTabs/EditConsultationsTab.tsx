@@ -111,7 +111,7 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
       console.log('[EditConsultationsTab] Headers:', getAuthHeaders());
       
       console.log('[EditConsultationsTab] Criando consulta:', consultationData);
-      const response = await axios.post('http://localhost:3000/api/medical-records/consultations', consultationData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/medical-records/consultations`, consultationData, {
         headers: getAuthHeaders()
       });
       

@@ -3,7 +3,7 @@ import Modal from '../Modal';
 import axios from 'axios';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
 
 export default function Permissions() {
   const [permissions, setPermissions] = useState<any[]>([]);

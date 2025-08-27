@@ -36,7 +36,7 @@ const ROLE_CONFIGS = {
   PATIENT: { icon: UsersIcon, color: 'orange', label: 'Paciente' }
 } as const;
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
 
 export const UserManagement: React.FC<UserManagementProps> = ({ className = "" }) => {
   const [users, setUsers] = useState<User[]>([]);

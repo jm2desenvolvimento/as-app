@@ -126,10 +126,10 @@ const MedicalRecord: React.FC = () => {
 
         // Garantir que estamos usando o ID correto (profile.id)
         console.log('🔍 Buscando prontuário existente para paciente:', patientId);
-        console.log('URL da API:', `http://localhost:3000/api/medical-records/patient/${patientId}`);
+        console.log('URL da API:', `${import.meta.env.VITE_API_URL}/medical-records/patient/${patientId}`);
         console.log('Headers:', { Authorization: `Bearer ${token?.substring(0, 20)}...` });
         
-        let response = await fetch(`http://localhost:3000/api/medical-records/patient/${patientId}`, {
+        let response = await fetch(`${import.meta.env.VITE_API_URL}/medical-records/patient/${patientId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -146,7 +146,7 @@ const MedicalRecord: React.FC = () => {
         if (response.status === 404) {
           console.log('📝 Prontuário não encontrado. Criando automaticamente...');
           
-          const createResponse = await fetch(`http://localhost:3000/api/medical-records/patient/${patientId}`, {
+          const createResponse = await fetch(`${import.meta.env.VITE_API_URL}/medical-records/patient/${patientId}`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -425,7 +425,7 @@ const MedicalRecord: React.FC = () => {
         }
 
         // ✅ USAR ENDPOINT ÚNICO: O backend já filtra automaticamente baseado no usuário logado
-        const apiUrl = 'http://localhost:3000/api/patients';
+        const apiUrl = `${import.meta.env.VITE_API_URL}/patients`;
         console.log('🏥 Usando endpoint único /patients - o backend filtra automaticamente por território');
 
         console.log('📡 URL da API:', apiUrl);
