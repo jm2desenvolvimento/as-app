@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Shield, Search, CheckCircle2 } from 'lucide-react';
 
-const API_BASE = `${import.meta.env.VITE_API_URL}/api`;
+const API_BASE = import.meta.env.VITE_API_URL;
 const ROLES = [
   { value: 'MASTER', label: 'Master', color: 'bg-purple-500' },
   { value: 'ADMIN', label: 'Administrador', color: 'bg-blue-500' },

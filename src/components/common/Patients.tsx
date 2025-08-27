@@ -180,7 +180,7 @@ const Patients = () => {
         }
       } else if (user?.role === 'MASTER') {
         // MASTER vê todas as prefeituras
-        const cityHallsResponse = await axios.get('/city-hall');
+        const cityHallsResponse = await axios.get('/cityhall');
         setCityHalls(cityHallsResponse.data);
       }
     } catch (error) {
