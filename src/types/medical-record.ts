@@ -1,4 +1,3 @@
-esol
 export interface Consultation {
   id: string;
   date: string;
