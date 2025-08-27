@@ -5,7 +5,7 @@ import App from './App.tsx'
 import axios from 'axios'
 
 // Configuração global do axios: baseURL e token JWT
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const apiBaseUrl = import.meta.env.VITE_API_URL
 console.log('🔧 [AXIOS CONFIG] VITE_API_URL:', import.meta.env.VITE_API_URL)
 console.log('🔧 [AXIOS CONFIG] apiBaseUrl final:', apiBaseUrl)
 axios.defaults.baseURL = apiBaseUrl
