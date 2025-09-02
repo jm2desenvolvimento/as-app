@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { User, Plus, Search, Eye, EyeOff, Pencil, Trash2, Shield } from 'lucide-react';
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { PageHeader } from '../ui';
 import Modal from '../common/Modal';
 
@@ -30,6 +31,7 @@ interface HealthUnit {
 
 export default function MasterUsers() {
   const { hasPermission } = usePermission();
+  const isMobile = useIsMobile();
 
   const canView = hasPermission(PERMISSIONS.USER_VIEW);
   const canList = hasPermission(PERMISSIONS.USER_LIST);
@@ -189,9 +191,11 @@ export default function MasterUsers() {
         {canCreate && (
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-base animate-glow"
+            className={`flex items-center bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold animate-glow ${
+              isMobile ? 'px-3 py-2 text-sm' : 'px-6 py-2 text-base'
+            }`}
           >
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className={`${isMobile ? 'h-4 w-4 mr-1' : 'h-5 w-5 mr-2'}`} />
             Novo Usuário
           </button>
         )}

@@ -23,6 +23,7 @@ import {
   List
 } from 'lucide-react';
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 // Tipos atualizados para a API
 interface MedicalSchedule {
@@ -98,6 +99,7 @@ interface FilterOptions {
 const Schedule: React.FC = () => {
   const navigate = useNavigate();
   const { hasPermission } = usePermission();
+  const isMobile = useIsMobile();
   
   // Estados
   const [loading, setLoading] = useState(true);
@@ -431,9 +433,11 @@ const Schedule: React.FC = () => {
         </div>
         <button
           onClick={() => navigate('/doctor/appointments/new')}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center gap-2"
+          className={`bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center ${
+            isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2'
+          }`}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
           Novo Agendamento
         </button>
       </div>

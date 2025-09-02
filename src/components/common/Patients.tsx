@@ -3,6 +3,7 @@ import { User, Plus, Eye, Edit2, Trash2, Search, EyeOff, MapPin, Building2, User
 import Modal from './Modal';
 import { PageHeader } from '../ui';
 import { usePermission } from '../../hooks/usePermission';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { useAuthStore } from '../../store/authStore';
 import axios from 'axios';
 
@@ -46,6 +47,7 @@ interface Patient {
 
 const Patients = () => {
   const { hasPermission } = usePermission();
+  const isMobile = useIsMobile();
   const { user } = useAuthStore();
   const canCreate = hasPermission('patient_create');
   const canEdit = hasPermission('patient_update');
@@ -460,58 +462,121 @@ const Patients = () => {
           </div>
         </div>
         {canCreate && (
-          <button className="flex items-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-base animate-glow" onClick={handleOpenModal}>
-            <Plus className="h-5 w-5 mr-2" />
+          <button className={`flex items-center bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold animate-glow ${
+            isMobile ? 'px-3 py-2 text-sm' : 'px-6 py-2 text-base'
+          }`} onClick={handleOpenModal}>
+            <Plus className={`${isMobile ? 'h-4 w-4 mr-1' : 'h-5 w-5 mr-2'}`} />
             Novo Paciente
           </button>
         )}
       </div>
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-x-auto animate-fade-in">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="text-gray-500 border-b">
-              <th className="px-6 py-4 text-left font-bold tracking-wide">NOME</th>
-              <th className="px-6 py-4 text-left font-bold tracking-wide">E-MAIL</th>
-              <th className="px-6 py-4 text-left font-bold tracking-wide">TELEFONE</th>
-              <th className="px-6 py-4 text-left font-bold tracking-wide">DATA DE NASC.</th>
-              <th className="px-6 py-4 text-center font-bold tracking-wide">AÇÕES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPatients.length === 0 ? (
-              <tr><td colSpan={5} className="py-12 text-center text-gray-400 text-lg">Nenhum paciente encontrado.</td></tr>
-            ) :
-              filteredPatients.map((row, idx) => (
-                <tr key={row.id} className={`border-b ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50 transition-all`}>
-                  <td className="px-6 py-4 font-medium text-gray-900">{row.profile?.name || 'N/A'}</td>
-                  <td className="px-6 py-4 text-gray-700">{row.email || 'N/A'}</td>
-                  <td className="px-6 py-4 text-gray-700">{row.profile?.profile_phones?.[0]?.phone || 'N/A'}</td>
-                  <td className="px-6 py-4 text-gray-700">{row.profile?.birth_date ? new Date(row.profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {canView && (
-                        <button className="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition" title="Visualizar" onClick={() => handleView(row)}>
-                          <Eye className="h-5 w-5" />
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition" title="Editar" onClick={() => handleEdit(row)}>
-                          <Edit2 className="h-5 w-5" />
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition" title="Excluir" onClick={() => handleDelete(row.id)}>
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      )}
+      {isMobile ? (
+        // Layout de cards para mobile
+        <div className="space-y-4">
+          {filteredPatients.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
+              <p className="text-gray-400 text-lg">Nenhum paciente encontrado.</p>
+            </div>
+          ) : (
+            filteredPatients.map((row) => (
+              <div key={row.id} className="bg-white rounded-2xl shadow-xl border border-gray-100 p-4 animate-fade-in">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                      <User className="w-6 h-6 text-blue-600" />
                     </div>
-                  </td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
-      </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-base">{row.profile?.name || 'N/A'}</p>
+                      <p className="text-xs text-gray-500">ID: {row.id}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {canView && (
+                      <button className="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition" title="Visualizar" onClick={() => handleView(row)}>
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    )}
+                    {canEdit && (
+                      <button className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition" title="Editar" onClick={() => handleEdit(row)}>
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition" title="Excluir" onClick={() => handleDelete(row.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">{row.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">{row.profile?.profile_phones?.[0]?.phone || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">
+                      {row.profile?.birth_date ? new Date(row.profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      ) : (
+        // Layout de tabela para desktop
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-x-auto animate-fade-in">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="text-gray-500 border-b">
+                <th className="px-6 py-4 text-left font-bold tracking-wide">NOME</th>
+                <th className="px-6 py-4 text-left font-bold tracking-wide">E-MAIL</th>
+                <th className="px-6 py-4 text-left font-bold tracking-wide">TELEFONE</th>
+                <th className="px-6 py-4 text-left font-bold tracking-wide">DATA DE NASC.</th>
+                <th className="px-6 py-4 text-center font-bold tracking-wide">AÇÕES</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPatients.length === 0 ? (
+                <tr><td colSpan={5} className="py-12 text-center text-gray-400 text-lg">Nenhum paciente encontrado.</td></tr>
+              ) :
+                filteredPatients.map((row, idx) => (
+                  <tr key={row.id} className={`border-b ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50 transition-all`}>
+                    <td className="px-6 py-4 font-medium text-gray-900">{row.profile?.name || 'N/A'}</td>
+                    <td className="px-6 py-4 text-gray-700">{row.email || 'N/A'}</td>
+                    <td className="px-6 py-4 text-gray-700">{row.profile?.profile_phones?.[0]?.phone || 'N/A'}</td>
+                    <td className="px-6 py-4 text-gray-700">{row.profile?.birth_date ? new Date(row.profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {canView && (
+                          <button className="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition" title="Visualizar" onClick={() => handleView(row)}>
+                            <Eye className="h-5 w-5" />
+                          </button>
+                        )}
+                        {canEdit && (
+                          <button className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition" title="Editar" onClick={() => handleEdit(row)}>
+                            <Edit2 className="h-5 w-5" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition" title="Excluir" onClick={() => handleDelete(row.id)}>
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      )}
       {/* Modal de cadastro/edição */}
                                 <Modal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setModalStep(1); }} title={editId ? 'Editar Paciente' : 'Novo Paciente'} size="full" className="max-w-4xl max-h-[90vh]">
                <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
@@ -540,7 +605,7 @@ const Patients = () => {
                   <input name="email" value={userForm.email} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))} className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-4 py-2 placeholder-gray-400" placeholder="E-mail" />
                   {userErrors.email && <span className="text-red-500 text-xs">{userErrors.email}</span>}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Senha</label>
                     <div className="relative">
@@ -675,8 +740,8 @@ const Patients = () => {
             </div>
             <form onSubmit={handleProfileNext} className="space-y-4">
               <h2 className="text-lg font-semibold mb-2">Dados do Perfil</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">Nome completo</label>
                   <input name="name" value={profileForm.name} onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))} className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-4 py-2 placeholder-gray-400" placeholder="Nome completo" />
                   {profileErrors.name && <span className="text-red-500 text-xs">{profileErrors.name}</span>}
@@ -728,7 +793,7 @@ const Patients = () => {
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Telefones <span className="text-red-500">*</span></label>
                 {phones.map((p, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center mb-2 w-full">
+                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center mb-2 w-full">
                     <input
                       type="text"
                       value={p.phone}
@@ -807,7 +872,7 @@ const Patients = () => {
               <h2 className="text-lg font-semibold mb-2">Endereço</h2>
               {addresses.map((a, idx) => (
                 <div key={idx} className="border rounded-xl p-4 mb-4 bg-gray-50">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Logradouro</label>
                       <input type="text" value={a.address} onChange={e => handleAddressChange(idx, 'address', e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-3 py-2 placeholder-gray-400" placeholder="Rua/Avenida" />
@@ -821,7 +886,7 @@ const Patients = () => {
                       <input type="text" value={a.complement} onChange={e => handleAddressChange(idx, 'complement', e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-3 py-2 placeholder-gray-400" placeholder="Complemento" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Bairro</label>
                       <input type="text" value={a.district} onChange={e => handleAddressChange(idx, 'district', e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-3 py-2 placeholder-gray-400" placeholder="Bairro" />
@@ -835,7 +900,7 @@ const Patients = () => {
                       <input type="text" value={a.state} onChange={e => handleAddressChange(idx, 'state', e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-3 py-2 placeholder-gray-400" placeholder="Estado" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">CEP</label>
                       <input type="text" value={a.zip_code} onChange={e => handleAddressChange(idx, 'zip_code', e.target.value)} className="w-full rounded-lg border border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-3 py-2 placeholder-gray-400" placeholder="CEP" />
@@ -922,7 +987,7 @@ const Patients = () => {
       >
         <div className="p-4 space-y-4">
           {/* Dados do Usuário e Perfil em linha */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Dados do Usuário */}
             <div className="bg-gray-50 rounded-lg p-3">
               <h3 className="text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -976,7 +1041,7 @@ const Patients = () => {
           </div>
 
           {/* Telefones e E-mails em linha */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Telefones */}
             {viewPatient.profile?.profile_phones && viewPatient.profile.profile_phones.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-3">
@@ -1030,7 +1095,7 @@ const Patients = () => {
               <div className="space-y-2">
                 {viewPatient.profile.profile_addresses.map((address, idx) => (
                   <div key={idx} className="p-3 bg-white rounded border">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium text-gray-700">Logradouro:</span>
@@ -1081,7 +1146,7 @@ const Patients = () => {
               <Settings className="h-4 w-4 text-gray-600" />
               Informações do Sistema
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700">Criado em</label>
                 <p className="text-sm text-gray-900">

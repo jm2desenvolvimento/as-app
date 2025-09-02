@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { usePermission, PERMISSIONS } from '../../hooks/usePermission';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 // Tipos
 interface DoctorData {
@@ -81,6 +82,7 @@ interface PerformanceMetric {
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { hasPermission } = usePermission();
+  const isMobile = useIsMobile();
   
   // Estados
   const [loading, setLoading] = useState(true);

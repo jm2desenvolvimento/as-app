@@ -3,6 +3,7 @@ import axios from 'axios';
 import type { MedicalRecord, Consultation } from '../../../types/medical-record';
 import { Plus, Edit2, Trash2, Calendar, User, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 
 interface EditConsultationsTabProps {
   formData: Partial<MedicalRecord>;
@@ -12,6 +13,7 @@ interface EditConsultationsTabProps {
 
 const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, setFormData }) => {
   const { token, user } = useAuthStore();
+  const isMobile = useIsMobile();
 
   // ✅ DEBUG: Log dos dados recebidos
   console.log('🔄 [EditConsultationsTab] FormData recebido:', formData);
@@ -400,10 +402,12 @@ const EditConsultationsTab: React.FC<EditConsultationsTabProps> = ({ formData, s
           <button
             onClick={() => setIsAdding(true)}
             disabled={isLoading}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`inline-flex items-center text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isMobile ? 'px-2 py-1' : 'px-3 py-1.5'
+            }`}
             title="Adiciona e salva a consulta imediatamente no banco de dados"
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-1'}`} />
             Nova Consulta
           </button>
         )}

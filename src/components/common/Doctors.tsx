@@ -3,6 +3,7 @@ import { Stethoscope, Plus, Eye, Edit2, Trash2, Search, EyeOff, MapPin, Building
 import Modal from './Modal';
 import { PageHeader } from '../ui';
 import { usePermission } from '../../hooks/usePermission';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { useAuthStore } from '../../store/authStore';
 import axios from 'axios';
 
@@ -64,6 +65,7 @@ interface AddressForm {
 
 const Doctors = () => {
   const { hasPermission } = usePermission();
+  const isMobile = useIsMobile();
   const { user } = useAuthStore();
   const canCreate = hasPermission('doctor_create');
   const canEdit = hasPermission('doctor_update');
@@ -475,8 +477,10 @@ const Doctors = () => {
           </div>
         </div>
         {canCreate && (
-          <button className="flex items-center px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold text-base animate-glow" onClick={handleOpenModal}>
-            <Plus className="h-5 w-5 mr-2" />
+          <button className={`flex items-center bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-600 transition-all font-semibold animate-glow ${
+            isMobile ? 'px-3 py-2 text-sm' : 'px-6 py-2 text-base'
+          }`} onClick={handleOpenModal}>
+            <Plus className={`${isMobile ? 'h-4 w-4 mr-1' : 'h-5 w-5 mr-2'}`} />
             Novo Médico
           </button>
         )}

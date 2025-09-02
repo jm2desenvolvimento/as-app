@@ -5,9 +5,11 @@ import { useNavigate } from 'react-router-dom';
 interface LayoutHeaderProps {
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
+  isMobile?: boolean;
+  showMobileMenuButton?: boolean;
 }
 
-export default function LayoutHeader({ sidebarCollapsed }: LayoutHeaderProps) {
+export default function LayoutHeader({ sidebarCollapsed, onToggleSidebar, isMobile, showMobileMenuButton = true }: LayoutHeaderProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -26,7 +28,23 @@ export default function LayoutHeader({ sidebarCollapsed }: LayoutHeaderProps) {
   }, [profileOpen]);
 
   return (
-    <header className={`w-full h-20 bg-white flex items-center justify-end px-10 shadow-md transition-all duration-300 ${sidebarCollapsed ? 'pl-24' : 'pl-72'}`}>
+    <header className={`w-full h-20 bg-white flex items-center shadow-md transition-all duration-300 ${
+      isMobile 
+        ? 'justify-between px-4' 
+        : `justify-end px-10 ${sidebarCollapsed ? 'pl-24' : 'pl-72'}`
+    }`}>
+      {/* Botão de menu mobile */}
+      {isMobile && onToggleSidebar && showMobileMenuButton && (
+        <button
+          onClick={onToggleSidebar}
+          className="p-2 rounded-md text-gray-700 hover:bg-blue-50 focus:outline-none"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
+      
       <div className="flex items-center gap-8">
         <button className="relative text-gray-400 hover:text-blue-600">
           <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bell"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>

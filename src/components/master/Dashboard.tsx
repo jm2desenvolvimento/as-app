@@ -27,6 +27,7 @@ import {
   Bar 
 } from 'recharts';
 import { usePermission } from '../../hooks/usePermission';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 const stats = [
   {
@@ -91,6 +92,7 @@ const ActivityIcon = ({ type }: { type: string }) => {
 
 const MasterDashboard: React.FC = () => {
   const { hasPermission, hasRole, user } = usePermission();
+  const isMobile = useIsMobile();
   
   // Log para debug
   console.log('[MasterDashboard] User:', user);
@@ -116,39 +118,41 @@ const MasterDashboard: React.FC = () => {
     { month: 'Jun', agendadas: 130, realizadas: 120, canceladas: 10, taxa: 92.3 },
   ];
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className={`${isMobile ? 'p-4' : 'p-6'} bg-gray-50 min-h-screen`}>
       {/* Header */}
-      <div className="mb-6 flex items-center gap-4">
-        <TrendingUp className="text-blue-600" size={36} />
+      <div className={`${isMobile ? 'mb-4' : 'mb-6'} flex items-center gap-4`}>
+        <TrendingUp className="text-blue-600" size={isMobile ? 28 : 36} />
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 text-base">Visão geral do sistema e principais indicadores</p>
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>Dashboard</h1>
+          <p className={`text-gray-500 ${isMobile ? 'text-sm' : 'text-base'}`}>Visão geral do sistema e principais indicadores</p>
         </div>
       </div>
 
       {/* Cards Estatísticos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+      <div className={`grid grid-cols-1 ${isMobile ? 'sm:grid-cols-2' : 'sm:grid-cols-2 md:grid-cols-4'} gap-4 ${isMobile ? 'mb-6' : 'mb-8'}`}>
         {stats.map((stat, idx) => (
-          <div key={idx} className={`flex items-center bg-white rounded-xl shadow p-5 min-w-[220px] border-b-4 ${stat.colorClass} transition hover:scale-105 hover:shadow-lg`}>
-            <div className={`flex items-center justify-center w-12 h-12 rounded-full mr-4 text-2xl ${stat.colorClass.replace('border-b-4', '')}`}>
-              {stat.icon}
+          <div key={idx} className={`flex items-center bg-white rounded-xl shadow ${isMobile ? 'p-4' : 'p-5'} ${isMobile ? 'min-w-[180px]' : 'min-w-[220px]'} border-b-4 ${stat.colorClass} transition hover:scale-105 hover:shadow-lg`}>
+            <div className={`flex items-center justify-center ${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full ${isMobile ? 'mr-3' : 'mr-4'} text-2xl ${stat.colorClass.replace('border-b-4', '')}`}>
+              {React.cloneElement(stat.icon, { size: isMobile ? 20 : 28 })}
             </div>
             <div>
-              <div className="text-gray-500 text-sm font-medium">{stat.label}</div>
-              <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
+              <div className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'} font-medium`}>{stat.label}</div>
+              <div className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>{stat.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className={`grid grid-cols-1 ${isMobile ? 'gap-4 mb-6' : 'lg:grid-cols-3 gap-6 mb-8'}`}>
         {/* Gráfico de Desempenho */}
-        <div className="col-span-2 bg-white rounded-xl shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="font-semibold text-lg text-gray-800 flex items-center gap-2">
-              <Calendar className="text-blue-500" size={20} /> Desempenho Geral das Consultas
+        <div className={`${isMobile ? '' : 'col-span-2'} bg-white rounded-xl shadow ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'}`}>
+            <div className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'} text-gray-800 flex items-center gap-2`}>
+              <Calendar className="text-blue-500" size={isMobile ? 16 : 20} /> 
+              {isMobile ? 'Desempenho' : 'Desempenho Geral das Consultas'}
             </div>
-            <div className="flex items-center gap-2">
+            {!isMobile && (
+              <div className="flex items-center gap-2">
               <button className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded text-sm text-gray-600 border border-gray-200 hover:bg-gray-200">
                 Últimos 6 Meses
               </button>
@@ -167,8 +171,9 @@ const MasterDashboard: React.FC = () => {
                 <BarChartIcon size={20} />
               </button>
             </div>
+            )}
           </div>
-          <div className="h-64 w-full">
+          <div className={`${isMobile ? 'h-48' : 'h-64'} w-full`}>
             <ResponsiveContainer width="100%" height="100%">
               {chartType === 'line' ? (
                 <LineChart data={chartData}>
@@ -196,7 +201,7 @@ const MasterDashboard: React.FC = () => {
               )}
             </ResponsiveContainer>
           </div>
-          <div className="flex gap-4 mt-4">
+          <div className={`flex ${isMobile ? 'flex-wrap gap-2' : 'gap-4'} ${isMobile ? 'mt-3' : 'mt-4'}`}>
             <span className="flex items-center gap-1 text-blue-500 text-xs font-medium"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block"></span>Agendadas</span>
             <span className="flex items-center gap-1 text-green-500 text-xs font-medium"><span className="w-3 h-3 rounded-full bg-green-400 inline-block"></span>Realizadas</span>
             <span className="flex items-center gap-1 text-red-500 text-xs font-medium"><span className="w-3 h-3 rounded-full bg-red-400 inline-block"></span>Canceladas</span>
@@ -204,14 +209,17 @@ const MasterDashboard: React.FC = () => {
           </div>
         </div>
         {/* Atividades Recentes */}
-        <div className="bg-white rounded-xl shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="font-semibold text-lg text-gray-800 flex items-center gap-2">
-              <Calendar className="text-blue-500" size={20} /> Atividades Recentes
+        <div className={`bg-white rounded-xl shadow ${isMobile ? 'p-4' : 'p-6'}`}>
+          <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'}`}>
+            <span className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'} text-gray-800 flex items-center gap-2`}>
+              <Calendar className="text-blue-500" size={isMobile ? 16 : 20} /> 
+              {isMobile ? 'Atividades' : 'Atividades Recentes'}
             </span>
-            <a href="#" className="text-blue-600 text-sm font-medium hover:underline">Ver todas →</a>
+            {!isMobile && (
+              <a href="#" className="text-blue-600 text-sm font-medium hover:underline">Ver todas →</a>
+            )}
           </div>
-          <ul className="space-y-4">
+          <ul className={`${isMobile ? 'space-y-3' : 'space-y-4'}`}>
             {activities.map((a, idx) => (
               <li key={idx} className="flex items-start gap-3">
                 <ActivityIcon type={a.type} />
@@ -227,12 +235,15 @@ const MasterDashboard: React.FC = () => {
       </div>
 
       {/* Próximas Consultas */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <span className="font-semibold text-lg text-gray-800 flex items-center gap-2">
-            <Calendar className="text-blue-500" size={20} /> Próximas Consultas
+      <div className={`bg-white rounded-xl shadow ${isMobile ? 'p-4' : 'p-6'}`}>
+        <div className={`flex items-center justify-between ${isMobile ? 'mb-3' : 'mb-4'}`}>
+          <span className={`font-semibold ${isMobile ? 'text-base' : 'text-lg'} text-gray-800 flex items-center gap-2`}>
+            <Calendar className="text-blue-500" size={isMobile ? 16 : 20} /> 
+            {isMobile ? 'Consultas' : 'Próximas Consultas'}
           </span>
-          <a href="#" className="text-blue-600 text-sm font-medium hover:underline">Ver todas →</a>
+          {!isMobile && (
+            <a href="#" className="text-blue-600 text-sm font-medium hover:underline">Ver todas →</a>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">

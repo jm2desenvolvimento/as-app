@@ -17,9 +17,10 @@ export interface SidebarItem {
 interface SidebarProps {
   items: SidebarItem[];
   collapsed?: boolean;
+  onItemClick?: () => void;
 }
 
-export default function Sidebar({ items, collapsed }: SidebarProps) {
+export default function Sidebar({ items, collapsed, onItemClick }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedDropdowns, setExpandedDropdowns] = useState<string[]>([]);
@@ -107,6 +108,10 @@ export default function Sidebar({ items, collapsed }: SidebarProps) {
       );
     } else {
       navigate(path);
+      // Fechar sidebar em mobile após navegação
+      if (onItemClick) {
+        onItemClick();
+      }
     }
   };
   const isDropdownExpanded = (path: string) => expandedDropdowns.includes(path);
@@ -168,7 +173,12 @@ export default function Sidebar({ items, collapsed }: SidebarProps) {
                       key={subItem.path}
                       className={`relative flex items-center px-3 py-2 rounded-lg cursor-pointer
                         ${currentPath === subItem.path ? 'bg-white/15 hover:bg-white/20' : 'hover:bg-white/10'}`}
-                      onClick={() => navigate(subItem.path)}
+                      onClick={() => {
+                        navigate(subItem.path);
+                        if (onItemClick) {
+                          onItemClick();
+                        }
+                      }}
                     >
                       {currentPath === subItem.path && (
                         <div className="absolute left-[-8px] top-1/2 transform -translate-y-1/2 w-1 h-5 bg-white rounded-r"></div>
@@ -194,7 +204,12 @@ export default function Sidebar({ items, collapsed }: SidebarProps) {
               className={`relative flex items-center px-3 py-2 rounded-lg cursor-pointer
                 ${currentPath === item.path ? 'bg-white/15 hover:bg-white/20' : 'hover:bg-white/10'}
                 ${collapsed ? 'justify-center' : 'justify-start'}`}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                navigate(item.path);
+                if (onItemClick) {
+                  onItemClick();
+                }
+              }}
               title={collapsed ? item.label : ''}
             >
               {currentPath === item.path && (

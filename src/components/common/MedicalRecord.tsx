@@ -1559,8 +1559,10 @@ const DoctorMedicalRecord: React.FC<DoctorMedicalRecordProps> = ({
               </div>
             </div>
             <div className="flex space-x-2">
-              <button className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                <Plus className="w-4 h-4 mr-2" />
+              <button className={`text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 flex items-center ${
+                isMobile ? 'px-2 py-1' : 'px-4 py-2'
+              }`}>
+                <Plus className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
                 Nova Consulta
               </button>
               <button 

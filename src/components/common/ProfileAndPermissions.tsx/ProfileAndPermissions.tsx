@@ -5,6 +5,7 @@ import RolePermissions from './RolePermissions';
 import UsersPermissions from './UsersPermissions';
 import { Shield } from 'lucide-react';
 import { PageHeader } from '../../ui';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 
 const TABS = [
   { label: 'Usuários', value: 'users' },
@@ -15,35 +16,38 @@ const TABS = [
 
 export default function ProfileAndPermissions() {
   const [activeTab, setActiveTab] = useState('users');
+  const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-full w-full min-h-0 min-w-0">
+    <div className={`flex flex-col h-full w-full min-h-0 min-w-0 ${isMobile ? 'p-2' : 'p-4'}`}>
       {/* Cabeçalho com padrão do PageHeader (mesmo de Doctors/Reports) */}
       <PageHeader
         title="Perfis e Permissões"
         subtitle="Gerencie perfis, permissões e acessos do sistema"
         icon={Shield}
-        className="mb-8 py-1 px-4 rounded-xl shadow bg-white border border-gray-100"
+        className={`${isMobile ? 'mb-4 py-1 px-2' : 'mb-8 py-1 px-4'} rounded-xl shadow bg-white border border-gray-100`}
       />
       {/* Tabs centralizadas */}
-      <div className="flex justify-center mb-8 border-b border-blue-200">
-        <div className="flex gap-2">
+      <div className={`flex justify-center ${isMobile ? 'mb-4' : 'mb-8'} border-b border-blue-200 overflow-x-auto`}>
+        <div className={`flex ${isMobile ? 'gap-1' : 'gap-2'} ${isMobile ? 'min-w-max' : ''}`}>
           {TABS.map(tab => (
             <button
               key={tab.value}
-              className={`px-4 py-2 rounded-t-lg font-semibold transition-colors duration-200 focus:outline-none ${
+              className={`${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2'} rounded-t-lg font-semibold transition-colors duration-200 focus:outline-none whitespace-nowrap ${
                 activeTab === tab.value
                   ? 'bg-white border-x border-t border-blue-400 text-blue-700 -mb-px'
                   : 'bg-blue-50 text-blue-500 hover:bg-blue-100'
               }`}
               onClick={() => setActiveTab(tab.value)}
             >
-              {tab.label}
+              {isMobile ? tab.label.split(' ')[0] : tab.label}
             </button>
           ))}
         </div>
       </div>
-      <div className="flex-1 min-h-0 min-w-0 bg-white rounded-lg shadow p-6 overflow-auto">
+      <div className={`flex-1 min-h-0 min-w-0 bg-white rounded-lg shadow overflow-auto ${
+        isMobile ? 'p-2' : 'p-6'
+      }`}>
         {activeTab === 'users' && <Users />}
         {activeTab === 'permissions' && <Permissions />}
         {activeTab === 'role_permissions' && <RolePermissions />}

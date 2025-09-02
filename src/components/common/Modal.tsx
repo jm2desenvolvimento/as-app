@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, FileText, Download } from 'lucide-react';
 
@@ -152,6 +153,7 @@ const Modal: React.FC<ModalProps> = ({
   appointment,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   // Fechar com ESC
   useEffect(() => {
@@ -181,11 +183,11 @@ const Modal: React.FC<ModalProps> = ({
 
   // Tamanhos do modal
   const sizeClasses = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    full: 'max-w-4xl',
+    sm: isMobile ? 'max-w-sm mx-4' : 'max-w-sm',
+    md: isMobile ? 'max-w-md mx-4' : 'max-w-md',
+    lg: isMobile ? 'max-w-lg mx-4' : 'max-w-lg',
+    xl: isMobile ? 'max-w-xl mx-4' : 'max-w-xl',
+    full: isMobile ? 'max-w-full mx-4' : 'max-w-4xl',
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -198,7 +200,7 @@ const Modal: React.FC<ModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
+          className={`fixed inset-0 z-50 flex items-center justify-center ${isMobile ? 'p-2' : 'p-4'} ${
             showOverlay ? 'bg-black/50 backdrop-blur-sm' : ''
           }`}
           onClick={handleOverlayClick}
@@ -209,7 +211,7 @@ const Modal: React.FC<ModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className={`bg-white rounded-lg shadow-2xl w-full ${sizeClasses[size]} ${className}`}
+            className={`bg-white rounded-lg shadow-2xl w-full ${sizeClasses[size]} ${isMobile ? 'max-h-[95vh]' : 'max-h-[90vh]'} ${className}`}
             tabIndex={-1}
             role="dialog"
             aria-modal="true"
@@ -217,11 +219,11 @@ const Modal: React.FC<ModalProps> = ({
           >
             {/* Header */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-blue-600 bg-blue-800 rounded-t-lg">
+              <div className={`flex items-center justify-between ${isMobile ? 'p-3' : 'p-4 sm:p-6'} border-b border-blue-600 bg-blue-800 rounded-t-lg`}>
                 {title && (
                   <h2
                     id="modal-title"
-                    className="text-lg sm:text-xl font-semibold text-white"
+                    className={`${isMobile ? 'text-base' : 'text-lg sm:text-xl'} font-semibold text-white`}
                   >
                     {title}
                   </h2>
@@ -239,7 +241,7 @@ const Modal: React.FC<ModalProps> = ({
             )}
 
                          {/* Content */}
-             <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+             <div className={`${isMobile ? 'p-3' : 'p-4 sm:p-6'} ${isMobile ? 'max-h-[80vh]' : 'max-h-[70vh]'} overflow-y-auto`}>
                {children || (appointment && <AppointmentDetailsModal appointment={appointment} />)}
              </div>
           </motion.div>
