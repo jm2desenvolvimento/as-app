@@ -4,6 +4,7 @@ import axios from 'axios';
 import { usePermission } from '../../hooks/usePermission';
 // import { PERMISSIONS } from '../../hooks/usePermission'; // Removido pois não está sendo usado
 import { useAuthStore } from '../../store/authStore';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { 
   User, 
   Calendar, 
@@ -1537,6 +1538,7 @@ const DoctorMedicalRecord: React.FC<DoctorMedicalRecordProps> = ({
   onCancelEdit,
   editLoading
 }) => {
+  const isMobile = useIsMobile();
   if (medicalRecord) {
     return (
       <div className="space-y-6">

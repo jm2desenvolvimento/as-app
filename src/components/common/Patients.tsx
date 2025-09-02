@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, Eye, Edit2, Trash2, Search, EyeOff, MapPin, Building2, UserCheck, Phone, Mail, Settings } from 'lucide-react';
+import { User, Plus, Eye, Edit2, Trash2, Search, EyeOff, MapPin, Building2, UserCheck, Phone, Mail, Settings, Calendar } from 'lucide-react';
 import Modal from './Modal';
 import { PageHeader } from '../ui';
 import { usePermission } from '../../hooks/usePermission';
